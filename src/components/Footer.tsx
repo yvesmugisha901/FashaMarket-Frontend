@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ShoppingBag, Mail, Phone, MapPin } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
+import logo from '@/assets/fasha2.jpeg'
 
 export default function Footer() {
     return (
@@ -9,14 +10,7 @@ export default function Footer() {
 
                     {/* Brand */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-brand-600 p-1.5 rounded-lg">
-                                <ShoppingBag className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="font-bold text-xl text-white">
-                                Fasha<span className="text-brand-400">Market</span>
-                            </span>
-                        </div>
+                        <img src={logo} alt="FashaMarket" className="h-10 w-auto object-contain" />
                         <p className="text-sm leading-relaxed">
                             Rwanda's trusted second-hand marketplace. Verified sellers, signed agreements, structured delivery.
                         </p>
