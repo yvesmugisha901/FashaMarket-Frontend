@@ -1,23 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Trash2, BadgeCheck, Clock, XCircle, CheckCircle, Search } from 'lucide-react'
+import {
+    Plus, Trash2, BadgeCheck, Clock, XCircle,
+    CheckCircle, Search, Package, ShoppingCart,
+    TrendingUp, ArrowRight, Eye
+} from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/context/AuthContext'
 import { ordersApi } from '@/api/orders'
 import { productsApi } from '@/api/products'
 
 const STATUS_STYLE: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-700',
+    PENDING: 'bg-amber-100 text-amber-700',
     APPROVED: 'bg-green-100 text-green-700',
     REJECTED: 'bg-red-100 text-red-700',
-    SOLD: 'bg-gray-100 text-gray-600',
+    SOLD: 'bg-zinc-100 text-zinc-600',
+}
+
+const ORDER_STATUS_STYLE: Record<string, string> = {
+    PENDING: 'bg-amber-100 text-amber-700',
+    PAID: 'bg-blue-100 text-blue-700',
+    SHIPPED: 'bg-violet-100 text-violet-700',
+    DELIVERED: 'bg-green-100 text-green-700',
+    CANCELLED: 'bg-red-100 text-red-700',
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
-    PENDING: <Clock className="h-3.5 w-3.5" />,
-    APPROVED: <CheckCircle className="h-3.5 w-3.5" />,
-    REJECTED: <XCircle className="h-3.5 w-3.5" />,
-    SOLD: <BadgeCheck className="h-3.5 w-3.5" />,
+    PENDING: <Clock className="h-3 w-3" />,
+    APPROVED: <CheckCircle className="h-3 w-3" />,
+    REJECTED: <XCircle className="h-3 w-3" />,
+    SOLD: <BadgeCheck className="h-3 w-3" />,
 }
 
 export default function DashboardPage() {
@@ -45,184 +57,235 @@ export default function DashboardPage() {
         if (confirm('Delete this listing?')) deleteProduct.mutate(id)
     }
 
+    const deliveredOrders = orders.filter((o: any) => o.status === 'DELIVERED')
+    const pendingOrders = orders.filter((o: any) => o.status === 'PENDING')
+    const shippedOrders = orders.filter((o: any) => o.status === 'SHIPPED')
+    const approvedProducts = myProducts.filter((p: any) => p.status === 'APPROVED')
+    const pendingProducts = myProducts.filter((p: any) => p.status === 'PENDING')
+
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-zinc-50">
             <Navbar />
 
-            <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
-
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                        <p className="text-sm text-gray-500 mt-1">Welcome back, {user?.name}</p>
+            {/* Page header */}
+            <div className="bg-white border-b border-zinc-100">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white font-black text-lg">
+                                {user?.name[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
+                                    Welcome back, {user?.name.split(' ')[0]}
+                                </h1>
+                                <p className="text-sm text-zinc-400 mt-0.5">
+                                    {isSeller ? 'Seller Dashboard' : 'Buyer Dashboard'} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </p>
+                            </div>
+                        </div>
+                        {isSeller ? (
+                            <Link to="/sell"
+                                className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all text-sm">
+                                <Plus className="h-4 w-4" />
+                                New Listing
+                            </Link>
+                        ) : (
+                            <Link to="/products"
+                                className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all text-sm">
+                                <Search className="h-4 w-4" />
+                                Browse Products
+                            </Link>
+                        )}
                     </div>
-                    {isSeller ? (
-                        <Link to="/sell" className="btn-primary flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            New Listing
-                        </Link>
-                    ) : (
-                        <Link to="/products" className="btn-primary flex items-center gap-2">
-                            <Search className="h-4 w-4" />
-                            Browse Products
-                        </Link>
-                    )}
                 </div>
+            </div>
+
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="card p-4 text-center">
-                        <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
-                        <p className="text-xs text-gray-500 mt-1">Total Orders</p>
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                        <div className="w-9 h-9 bg-zinc-100 rounded-xl flex items-center justify-center mb-3">
+                            <ShoppingCart className="h-4 w-4 text-zinc-600" />
+                        </div>
+                        <p className="text-2xl font-black text-zinc-900">{orders.length}</p>
+                        <p className="text-xs text-zinc-400 mt-1">Total Orders</p>
                     </div>
-                    <div className="card p-4 text-center">
-                        <p className="text-2xl font-bold text-yellow-600">
-                            {orders.filter((o: any) => o.status === 'PENDING').length}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Pending</p>
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                        <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center mb-3">
+                            <Clock className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <p className="text-2xl font-black text-amber-600">{pendingOrders.length}</p>
+                        <p className="text-xs text-zinc-400 mt-1">Pending</p>
                     </div>
-                    <div className="card p-4 text-center">
-                        <p className="text-2xl font-bold text-blue-600">
-                            {orders.filter((o: any) => o.status === 'SHIPPED').length}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Shipped</p>
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                        <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center mb-3">
+                            <TrendingUp className="h-4 w-4 text-violet-500" />
+                        </div>
+                        <p className="text-2xl font-black text-violet-600">{shippedOrders.length}</p>
+                        <p className="text-xs text-zinc-400 mt-1">Shipped</p>
                     </div>
-                    <div className="card p-4 text-center">
-                        <p className="text-2xl font-bold text-green-600">
-                            {orders.filter((o: any) => o.status === 'DELIVERED').length}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Delivered</p>
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                        <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center mb-3">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                        </div>
+                        <p className="text-2xl font-black text-green-600">{deliveredOrders.length}</p>
+                        <p className="text-xs text-zinc-400 mt-1">Delivered</p>
                     </div>
                 </div>
+
+                {/* Seller extra stats */}
                 {isSeller && (
-                    <>
-                        <div className="card p-4 text-center">
-                            <p className="text-2xl font-bold text-brand-600">{myProducts.length}</p>
-                            <p className="text-xs text-gray-500 mt-1">My Listings</p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-zinc-900 rounded-2xl p-5">
+                            <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center mb-3">
+                                <Package className="h-4 w-4 text-white" />
+                            </div>
+                            <p className="text-2xl font-black text-white">{myProducts.length}</p>
+                            <p className="text-xs text-zinc-400 mt-1">Total Listings</p>
                         </div>
-                        <div className="card p-4 text-center">
-                            <p className="text-2xl font-bold text-yellow-600">
-                                {myProducts.filter((p: any) => p.status === 'PENDING').length}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Pending Review</p>
+                        <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                            <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center mb-3">
+                                <BadgeCheck className="h-4 w-4 text-green-500" />
+                            </div>
+                            <p className="text-2xl font-black text-green-600">{approvedProducts.length}</p>
+                            <p className="text-xs text-zinc-400 mt-1">Live Listings</p>
                         </div>
-                    </>
+                    </div>
                 )}
-            </div>
 
-            {/* Seller Listings */}
-            {isSeller && (
+                {/* Seller Listings */}
+                {isSeller && (
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-base font-bold text-zinc-900">My Listings</h2>
+                            {pendingProducts.length > 0 && (
+                                <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full">
+                                    {pendingProducts.length} pending review
+                                </span>
+                            )}
+                        </div>
+
+                        {loadingProducts && (
+                            <div className="space-y-3">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="bg-white rounded-2xl border border-zinc-100 p-4 animate-pulse h-20" />
+                                ))}
+                            </div>
+                        )}
+
+                        {!loadingProducts && myProducts.length === 0 && (
+                            <div className="bg-white rounded-2xl border border-zinc-100 p-10 text-center">
+                                <Package className="h-10 w-10 text-zinc-200 mx-auto mb-3" />
+                                <p className="text-zinc-500 font-medium">No listings yet</p>
+                                <p className="text-zinc-400 text-sm mt-1">Start selling by creating your first listing</p>
+                                <Link to="/sell"
+                                    className="inline-flex items-center gap-2 mt-4 bg-zinc-900 text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-zinc-700 transition-all">
+                                    <Plus className="h-4 w-4" /> Create Listing
+                                </Link>
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            {myProducts.map((product: any) => (
+                                <div key={product.id}
+                                    className="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-4 hover:shadow-sm transition-all">
+                                    <div className="w-14 h-14 bg-zinc-100 rounded-xl overflow-hidden flex-shrink-0">
+                                        {product.images?.[0] ? (
+                                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <Package className="h-5 w-5 text-zinc-300" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-zinc-900 truncate">{product.title}</p>
+                                        <p className="text-sm text-zinc-400 mt-0.5">{Number(product.price).toLocaleString()} RWF</p>
+                                    </div>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_STYLE[product.status]}`}>
+                                        {STATUS_ICON[product.status]}
+                                        {product.status}
+                                    </span>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <Link to={`/products/${product.id}`}
+                                            className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-lg transition-all"
+                                            title="View listing">
+                                            <Eye className="h-4 w-4" />
+                                        </Link>
+                                        {product.status === 'PENDING' && (
+                                            <button
+                                                onClick={() => handleDelete(product.id)}
+                                                disabled={deleteProduct.isPending}
+                                                className="p-2 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                title="Delete listing">
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Orders */}
                 <section>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">My Listings</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-base font-bold text-zinc-900">My Orders</h2>
+                        {orders.length > 0 && (
+                            <span className="text-xs text-zinc-400">{orders.length} total</span>
+                        )}
+                    </div>
 
-                    {loadingProducts && <p className="text-sm text-gray-400">Loading...</p>}
+                    {loadingOrders && (
+                        <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="bg-white rounded-2xl border border-zinc-100 p-4 animate-pulse h-20" />
+                            ))}
+                        </div>
+                    )}
 
-                    {!loadingProducts && myProducts.length === 0 && (
-                        <div className="card p-8 text-center text-gray-400">
-                            <p>No listings yet.</p>
-                            <Link to="/sell" className="btn-primary mt-4 inline-block">
-                                Create First Listing
+                    {!loadingOrders && orders.length === 0 && (
+                        <div className="bg-white rounded-2xl border border-zinc-100 p-10 text-center">
+                            <ShoppingCart className="h-10 w-10 text-zinc-200 mx-auto mb-3" />
+                            <p className="text-zinc-500 font-medium">No orders yet</p>
+                            <p className="text-zinc-400 text-sm mt-1">Browse products and place your first order</p>
+                            <Link to="/products"
+                                className="inline-flex items-center gap-2 mt-4 bg-zinc-900 text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-zinc-700 transition-all">
+                                <Search className="h-4 w-4" /> Browse Products
                             </Link>
                         </div>
                     )}
 
                     <div className="space-y-3">
-                        {myProducts.map((product: any) => (
-                            <div key={product.id} className="card p-4 flex items-center gap-4">
-                                {/* Image */}
-                                <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                    {product.images?.[0] ? (
-                                        <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
-                                            No img
-                                        </div>
-                                    )}
+                        {orders.map((order: any) => (
+                            <Link key={order.id} to={`/orders/${order.id}`}
+                                className="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-4 hover:shadow-sm hover:border-zinc-200 transition-all block">
+                                <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <ShoppingCart className="h-5 w-5 text-zinc-400" />
                                 </div>
-
-                                {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 truncate">{product.title}</p>
-                                    <p className="text-sm text-gray-500">{Number(product.price).toLocaleString()} RWF</p>
+                                    <p className="font-semibold text-zinc-900 truncate">{order.product_title}</p>
+                                    <p className="text-xs text-zinc-400 mt-0.5">
+                                        {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </p>
                                 </div>
-
-                                {/* Status badge */}
-                                <span className={`badge flex items-center gap-1 ${STATUS_STYLE[product.status]}`}>
-                                    {STATUS_ICON[product.status]}
-                                    {product.status}
-                                </span>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-2">
-                                    <Link
-                                        to={`/products/${product.id}`}
-                                        className="text-xs text-brand-600 hover:underline"
-                                    >
-                                        View
-                                    </Link>
-                                    {product.status === 'PENDING' && (
-                                        <button
-                                            onClick={() => handleDelete(product.id)}
-                                            disabled={deleteProduct.isPending}
-                                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                            title="Delete listing"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    )}
+                                <div className="text-right flex-shrink-0">
+                                    <p className="font-bold text-zinc-900 text-sm">
+                                        {Number(order.product_price).toLocaleString()} <span className="text-xs font-normal text-zinc-400">RWF</span>
+                                    </p>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold mt-1 ${ORDER_STATUS_STYLE[order.status] || 'bg-zinc-100 text-zinc-600'}`}>
+                                        {order.status}
+                                    </span>
                                 </div>
-                            </div>
+                                <ArrowRight className="h-4 w-4 text-zinc-300 flex-shrink-0" />
+                            </Link>
                         ))}
                     </div>
                 </section>
-            )}
-
-            {/* My Orders */}
-            <section>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">My Orders</h2>
-
-                {loadingOrders && <p className="text-sm text-gray-400">Loading...</p>}
-
-                {!loadingOrders && orders.length === 0 && (
-                    <div className="card p-8 text-center text-gray-400">
-                        <p>No orders yet.</p>
-                        <Link to="/products" className="btn-primary mt-4 inline-block">
-                            Browse Products
-                        </Link>
-                    </div>
-                )}
-
-                <div className="space-y-3">
-                    {orders.map((order: any) => (
-                        <Link
-                            key={order.id}
-                            to={`/orders/${order.id}`}
-                            className="card p-4 flex items-center justify-between hover:shadow-md transition-shadow"
-                        >
-                            <div>
-                                <p className="font-medium text-gray-900">{order.product_title}</p>
-                                <p className="text-sm text-gray-500">
-                                    {new Date(order.created_at).toLocaleDateString()}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-semibold text-gray-900">
-                                    {Number(order.product_price).toLocaleString()} RWF
-                                </p>
-                                <span className={`badge text-xs mt-1 ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                                        order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-yellow-100 text-yellow-700'
-                                    }`}>
-                                    {order.status}
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </section>
+            </div>
         </div>
-
     )
 }
