@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar'
 import { useAuth } from '@/context/AuthContext'
 import { ordersApi } from '@/api/orders'
 import { productsApi } from '@/api/products'
+import api from '@/api/axios'
 
 const STATUS_STYLE: Record<string, string> = {
     PENDING: 'bg-amber-100 text-amber-700',
@@ -41,6 +42,11 @@ export default function DashboardPage() {
         queryKey: ['my-orders'],
         queryFn: ordersApi.myOrders,
     })
+    const { data: sellerOrders = [], isLoading: loadingSellerOrders } = useQuery({
+        queryKey: ['seller-orders'],
+        queryFn: async () => (await api.get('/orders/seller')).data.data,
+        enabled: isSeller,
+    })
 
     const { data: myProducts = [], isLoading: loadingProducts } = useQuery({
         queryKey: ['my-products'],
@@ -62,6 +68,11 @@ export default function DashboardPage() {
     const shippedOrders = orders.filter((o: any) => o.status === 'SHIPPED')
     const approvedProducts = myProducts.filter((p: any) => p.status === 'APPROVED')
     const pendingProducts = myProducts.filter((p: any) => p.status === 'PENDING')
+
+    const confirmCash = useMutation({
+        mutationFn: (id: string) => api.post(`/orders/${id}/confirm-cash`),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['seller-orders'] }),
+    })
 
     return (
         <div className="min-h-screen bg-zinc-50">
@@ -137,7 +148,7 @@ export default function DashboardPage() {
 
                 {/* Seller extra stats */}
                 {isSeller && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="bg-zinc-900 rounded-2xl p-5">
                             <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center mb-3">
                                 <Package className="h-4 w-4 text-white" />
@@ -152,9 +163,26 @@ export default function DashboardPage() {
                             <p className="text-2xl font-black text-green-600">{approvedProducts.length}</p>
                             <p className="text-xs text-zinc-400 mt-1">Live Listings</p>
                         </div>
+                        <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                            <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center mb-3">
+                                <Clock className="h-4 w-4 text-amber-500" />
+                            </div>
+                            <p className="text-2xl font-black text-amber-600">
+                                {sellerOrders.filter((o: any) => o.status === 'PENDING' || o.status === 'AWAITING_CONFIRMATION').length}
+                            </p>
+                            <p className="text-xs text-zinc-400 mt-1">Pending Orders</p>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center mb-3">
+                                <TrendingUp className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <p className="text-2xl font-black text-blue-600">
+                                {sellerOrders.filter((o: any) => ['PAID', 'SHIPPED', 'DELIVERED'].includes(o.status)).length}
+                            </p>
+                            <p className="text-xs text-zinc-400 mt-1">Sales</p>
+                        </div>
                     </div>
                 )}
-
                 {/* Seller Listings */}
                 {isSeller && (
                     <section>
@@ -229,6 +257,113 @@ export default function DashboardPage() {
                         </div>
                     </section>
                 )}
+
+                {/* Orders */}
+                <section>
+
+                    {/* Seller — Incoming Orders */}
+                    {isSeller && (
+                        <section>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-zinc-900">Incoming Orders</h2>
+                                {sellerOrders.filter((o: any) => o.status === 'AWAITING_CONFIRMATION').length > 0 && (
+                                    <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full animate-pulse">
+                                        {sellerOrders.filter((o: any) => o.status === 'AWAITING_CONFIRMATION').length} awaiting payment confirmation
+                                    </span>
+                                )}
+                            </div>
+
+                            {loadingSellerOrders && (
+                                <div className="space-y-3">
+                                    {[1, 2].map(i => (
+                                        <div key={i} className="bg-white rounded-2xl border border-zinc-100 p-4 animate-pulse h-20" />
+                                    ))}
+                                </div>
+                            )}
+
+                            {!loadingSellerOrders && sellerOrders.length === 0 && (
+                                <div className="bg-white rounded-2xl border border-zinc-100 p-8 text-center">
+                                    <ShoppingCart className="h-8 w-8 text-zinc-200 mx-auto mb-3" />
+                                    <p className="text-zinc-500 font-medium">No orders yet</p>
+                                    <p className="text-zinc-400 text-sm mt-1">Orders for your products will appear here</p>
+                                </div>
+                            )}
+
+                            <div className="space-y-3">
+                                {sellerOrders.map((order: any) => (
+                                    <div key={order.id}
+                                        className="bg-white rounded-2xl border border-zinc-100 p-4 hover:shadow-sm transition-all">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold text-zinc-900 truncate">{order.product_title}</p>
+                                                <p className="text-xs text-zinc-400 mt-0.5">
+                                                    {new Date(order.created_at).toLocaleDateString('en-US', {
+                                                        month: 'short', day: 'numeric', year: 'numeric'
+                                                    })}
+                                                </p>
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <p className="font-black text-zinc-900">
+                                                    {Number(order.product_price).toLocaleString()} <span className="text-xs font-normal text-zinc-400">RWF</span>
+                                                </p>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold mt-1 ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+                                                    order.status === 'PAID' ? 'bg-blue-100 text-blue-700' :
+                                                        order.status === 'SHIPPED' ? 'bg-violet-100 text-violet-700' :
+                                                            order.status === 'AWAITING_CONFIRMATION' ? 'bg-orange-100 text-orange-700' :
+                                                                order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {order.status === 'AWAITING_CONFIRMATION' ? 'Payment Submitted' : order.status}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Payment info */}
+                                        {order.status === 'AWAITING_CONFIRMATION' && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-100 bg-amber-50 rounded-xl p-3">
+                                                <p className="text-xs text-amber-700 font-medium">
+                                                    ⏳ Buyer submitted payment — waiting for admin confirmation
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {order.status === 'PAID' && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-100 bg-blue-50 rounded-xl p-3">
+                                                <p className="text-xs text-blue-700 font-medium">
+                                                    ✅ Payment confirmed — please ship within 2 business days
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* COD — seller confirms cash received */}
+                                        {order.payment_method === 'COD' && order.status === 'PENDING' && order.agreement_signed && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-100">
+                                                <p className="text-xs text-zinc-500 mb-2">
+                                                    💵 Cash on Delivery — confirm when buyer pays you in cash
+                                                </p>
+                                                <button
+                                                    onClick={() => confirmCash.mutate(order.id)}
+                                                    disabled={confirmCash.isPending}
+                                                    className="w-full text-xs bg-green-600 text-white font-semibold px-3 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                                >
+                                                    {confirmCash.isPending ? 'Confirming...' : '✓ Confirm Cash Received'}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {order.status === 'DELIVERED' && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-100">
+                                                <p className="text-xs text-green-600 font-semibold">
+                                                    💰 You receive: {Number(order.seller_amount || order.product_price * 0.9).toLocaleString()} RWF
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+                </section>
 
                 {/* Orders */}
                 <section>

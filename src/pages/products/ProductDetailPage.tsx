@@ -1,21 +1,23 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { BadgeCheck, ArrowLeft } from 'lucide-react'
+import { BadgeCheck, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import { useAuth } from '@/context/AuthContext'
 import ReviewSection from '@/components/ReviewSection'
 
-const CONDITION_LABEL: Record<string, string> = {
-    NEW: 'New',
-    LIKE_NEW: 'Like New',
-    GOOD: 'Good',
-    FAIR: 'Fair',
+const CONDITION_LABEL: Record<string, { label: string; color: string }> = {
+    NEW: { label: 'New', color: 'bg-green-100 text-green-700' },
+    LIKE_NEW: { label: 'Like New', color: 'bg-blue-100 text-blue-700' },
+    GOOD: { label: 'Good', color: 'bg-amber-100 text-amber-700' },
+    FAIR: { label: 'Fair', color: 'bg-zinc-100 text-zinc-600' },
 }
 
 export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>()
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
+    const [imgIndex, setImgIndex] = useState(0)
 
     const { data: product, isLoading, isError } = useQuery({
         queryKey: ['product', id],
@@ -23,75 +25,185 @@ export default function ProductDetailPage() {
         enabled: !!id,
     })
 
-    if (isLoading) return <div className="flex h-screen items-center justify-center text-gray-400">Loading...</div>
-    if (isError || !product) return <div className="flex h-screen items-center justify-center text-red-500">Product not found.</div>
+    if (isLoading) return (
+        <div className="min-h-screen bg-zinc-50">
+            <Navbar />
+            <div className="max-w-5xl mx-auto px-4 py-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="aspect-square bg-zinc-100 rounded-2xl animate-pulse" />
+                    <div className="space-y-4">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="h-8 bg-zinc-100 rounded-xl animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+
+    if (isError || !product) return (
+        <div className="min-h-screen bg-zinc-50">
+            <Navbar />
+            <div className="flex items-center justify-center h-64">
+                <p className="text-red-500">Product not found.</p>
+            </div>
+        </div>
+    )
+
+    const images = product.images?.length ? product.images : []
+    const condition = CONDITION_LABEL[product.condition] || { label: product.condition, color: 'bg-zinc-100 text-zinc-600' }
+
+    // Is this the seller's own product?
+    const isOwnProduct = user?.role === 'SELLER' && product.seller_id === user?.id
+    const isSeller = user?.role === 'SELLER'
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-zinc-50">
             <Navbar />
 
             <div className="max-w-5xl mx-auto px-4 py-8">
-                <Link to="/products" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6">
+                <Link to="/products"
+                    className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-6 transition-colors">
                     <ArrowLeft className="h-4 w-4" />
                     Back to products
                 </Link>
 
                 <div className="grid md:grid-cols-2 gap-8">
-                    {/* Image */}
-                    <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                        {product.images[0] ? (
-                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">No image</div>
+
+                    {/* Images */}
+                    <div className="space-y-3">
+                        <div className="aspect-square bg-zinc-100 rounded-2xl overflow-hidden relative group">
+                            {images[imgIndex] ? (
+                                <img
+                                    src={images[imgIndex]}
+                                    alt={product.title}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-300 text-sm">
+                                    No image
+                                </div>
+                            )}
+
+                            {/* Prev/Next arrows */}
+                            {images.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={() => setImgIndex(i => Math.max(0, i - 1))}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setImgIndex(i => Math.min(images.length - 1, i + 1))}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Thumbnails */}
+                        {images.length > 1 && (
+                            <div className="flex gap-2">
+                                {images.map((img: string, i: number) => (
+                                    <button
+                                        key={img}
+                                        onClick={() => setImgIndex(i)}
+                                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-zinc-900' : 'border-transparent opacity-60 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <img src={img} alt="" className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
 
                     {/* Details */}
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                         <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">{product.category_name}</span>
-                            <h1 className="text-2xl font-bold text-gray-900 mt-1">{product.title}</h1>
+                            <span className="text-xs text-zinc-400 uppercase tracking-widest font-medium">
+                                {product.category_name}
+                            </span>
+                            <h1 className="text-2xl font-black text-zinc-900 mt-1 tracking-tight">
+                                {product.title}
+                            </h1>
                         </div>
 
-                        <p className="text-3xl font-bold text-gray-900">
-                            {Number(product.price).toLocaleString()} <span className="text-lg font-normal text-gray-500">RWF</span>
+                        <p className="text-4xl font-black text-zinc-900">
+                            {Number(product.price).toLocaleString()}
+                            <span className="text-lg font-normal text-zinc-400 ml-1">RWF</span>
                         </p>
 
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <span className="badge bg-gray-100 text-gray-600">
-                                Condition: {CONDITION_LABEL[product.condition]}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${condition.color}`}>
+                                {condition.label}
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            {product.seller_verified && <BadgeCheck className="h-4 w-4 text-brand-500" />}
-                            <span>Sold by <strong>{product.seller_name}</strong></span>
-                            {product.seller_verified && <span className="text-brand-600 text-xs font-medium">Verified Seller</span>}
+                        {/* Seller */}
+                        <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3">
+                            <div className="w-8 h-8 bg-zinc-900 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                {product.seller_name?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-zinc-900 truncate">{product.seller_name}</p>
+                                <p className="text-xs text-zinc-400">Seller</p>
+                            </div>
+                            {product.seller_verified && (
+                                <div className="flex items-center gap-1 text-xs text-brand-600 font-semibold flex-shrink-0">
+                                    <BadgeCheck className="h-4 w-4" />
+                                    Verified
+                                </div>
+                            )}
                         </div>
 
-                        <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                        <p className="text-zinc-600 leading-relaxed text-sm">{product.description}</p>
 
-                        {isAuthenticated ? (
-                            <Link
-                                to={`/checkout/${product.id}`}
-                                className="btn-primary w-full py-3 text-center block"
-                            >
-                                Buy Now
-                            </Link>
-                        ) : (
-                            <Link to="/login" className="btn-primary w-full py-3 text-center block">
-                                Log in to Buy
-                            </Link>
-                        )}
+                        {/* Buy button — logic */}
+                        <div className="space-y-3">
+                            {!isAuthenticated && (
+                                <Link to="/login"
+                                    className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold w-full py-3.5 rounded-xl transition-all text-sm text-center block">
+                                    Log in to Buy
+                                </Link>
+                            )}
 
-                        <p className="text-xs text-gray-400 text-center">
-                            A digital agreement will be required before your order is confirmed.
-                        </p>
-                        {/* Reviews */}
-                        <div className="mt-12 max-w-2xl">
-                            <ReviewSection productId={product.id} />
+                            {isAuthenticated && isOwnProduct && (
+                                <div className="bg-zinc-50 border border-zinc-200 rounded-xl py-3.5 text-center">
+                                    <p className="text-sm text-zinc-500 font-medium">This is your listing</p>
+                                </div>
+                            )}
+
+                            {isAuthenticated && isSeller && !isOwnProduct && (
+                                <div className="bg-amber-50 border border-amber-100 rounded-xl py-3.5 text-center">
+                                    <p className="text-sm text-amber-700 font-medium">
+                                        Sellers cannot purchase products. Switch to a buyer account.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isAuthenticated && !isSeller && (
+                                <Link
+                                    to={`/checkout/${product.id}`}
+                                    className="bg-zinc-900 hover:bg-zinc-700 text-white font-bold w-full py-3.5 rounded-xl transition-all text-sm text-center block"
+                                >
+                                    Buy Now
+                                </Link>
+                            )}
+
+                            <p className="text-xs text-zinc-400 text-center">
+                                A digital agreement will be required before your order is confirmed.
+                            </p>
                         </div>
                     </div>
+                </div>
+
+                {/* Reviews */}
+                <div className="mt-12 max-w-2xl">
+                    <ReviewSection productId={product.id} />
                 </div>
             </div>
         </div>

@@ -49,6 +49,10 @@ export default function AdminDashboardPage() {
         mutationFn: (id: string) => api.patch(`/admin/users/${id}/verify`),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
     })
+    const confirmPayment = useMutation({
+        mutationFn: (id: string) => api.post(`/orders/${id}/confirm-payment`),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-orders'] }),
+    })
     const suspendUser = useMutation({
         mutationFn: (id: string) => api.patch(`/admin/users/${id}/suspend`),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
@@ -367,20 +371,30 @@ export default function AdminDashboardPage() {
                                                 {Number(order.product_price).toLocaleString()} <span className="text-xs font-normal text-zinc-400">RWF</span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-xs font-medium text-zinc-500 bg-zinc-50 border border-zinc-100 px-2 py-1 rounded-lg">
-                                                    {order.payment_method}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <select
-                                                    value={order.status}
-                                                    onChange={(e) => updateOrderStatus.mutate({ id: order.id, status: e.target.value })}
-                                                    className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-700"
-                                                >
-                                                    {ORDER_STATUSES.map((s) => (
-                                                        <option key={s} value={s}>{s}</option>
-                                                    ))}
-                                                </select>
+                                                <div className="space-y-2">
+                                                    <select
+                                                        value={order.status}
+                                                        onChange={(e) => updateOrderStatus.mutate({ id: order.id, status: e.target.value })}
+                                                        className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-700 w-full"
+                                                    >
+                                                        {ORDER_STATUSES.map((s) => (
+                                                            <option key={s} value={s}>{s}</option>
+                                                        ))}
+                                                    </select>
+                                                    {order.payment_reference && order.status === 'AWAITING_CONFIRMATION' && (
+                                                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-2">
+                                                            <p className="text-xs text-amber-700 font-medium mb-1">MoMo Ref:</p>
+                                                            <p className="font-mono text-xs font-bold text-amber-900">{order.payment_reference}</p>
+                                                            <button
+                                                                onClick={() => confirmPayment.mutate(order.id)}
+                                                                disabled={confirmPayment.isPending}
+                                                                className="mt-2 w-full text-xs bg-green-600 text-white font-semibold px-2 py-1.5 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                                            >
+                                                                ✓ Confirm Payment
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
