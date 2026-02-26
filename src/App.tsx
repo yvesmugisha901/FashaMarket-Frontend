@@ -15,6 +15,7 @@ import OrderDetailPage from '@/pages/orders/OrderDetailPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import SettingsPage from './pages/dashboard/SettingsPage'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/checkout/:productId" element={<CheckoutPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
           {/* Admin only */}

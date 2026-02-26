@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 import { ordersApi } from '@/api/orders'
 import { productsApi } from '@/api/products'
 import api from '@/api/axios'
+import { Settings } from 'lucide-react'
 
 const STATUS_STYLE: Record<string, string> = {
     PENDING: 'bg-amber-100 text-amber-700',
@@ -93,6 +94,10 @@ export default function DashboardPage() {
                                 <p className="text-sm text-zinc-400 mt-0.5">
                                     {isSeller ? 'Seller Dashboard' : 'Buyer Dashboard'} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                 </p>
+                                <Link to="/settings"
+                                    className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-900 mt-1 transition-colors">
+                                    <Settings className="h-3 w-3" /> Account Settings
+                                </Link>
                             </div>
                         </div>
                         {isSeller ? (

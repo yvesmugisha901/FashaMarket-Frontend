@@ -18,10 +18,21 @@ export const ordersApi = {
     },
 
     signAgreement: async (orderId: string): Promise<void> => {
-        await api.post(`/orders/${orderId}/sign-agreement`)
+        await api.post(`/orders/${orderId}/sign`)
     },
 
-    // Admin only
+    submitPaymentProof: async (orderId: string, paymentReference: string): Promise<void> => {
+        await api.post(`/orders/${orderId}/payment-proof`, { payment_reference: paymentReference })
+    },
+
+    confirmReceived: async (orderId: string): Promise<void> => {
+        await api.post(`/orders/${orderId}/confirm-received`)
+    },
+
+    confirmCash: async (orderId: string): Promise<void> => {
+        await api.post(`/orders/${orderId}/confirm-cash`)
+    },
+
     updateStatus: async (orderId: string, status: OrderStatus): Promise<void> => {
         await api.patch(`/orders/${orderId}/status`, { status })
     },

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import { useAuth } from '@/context/AuthContext'
 import ReviewSection from '@/components/ReviewSection'
+import SEO from '@/components/SEO'
 
 const CONDITION_LABEL: Record<string, { label: string; color: string }> = {
     NEW: { label: 'New', color: 'bg-green-100 text-green-700' },
@@ -59,6 +60,15 @@ export default function ProductDetailPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50">
+            <SEO
+                title={product.title}
+                description={`${product.title} — ${product.condition} condition. ${product.description?.slice(0, 120)}. Buy now on FashaMarket Rwanda.`}
+                image={product.images?.[0]}
+                url={`https://fashamarket.rw/products/${product.id}`}
+                type="product"
+                price={product.price}
+                keywords={`${product.title}, buy ${product.category_name} Rwanda, second hand ${product.category_name} Kigali`}
+            />
             <Navbar />
 
             <div className="max-w-5xl mx-auto px-4 py-8">

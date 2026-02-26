@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import SEO from '@/components/SEO'
 
 function useInView(threshold = 0.15) {
     const ref = useRef<HTMLDivElement>(null)
@@ -86,7 +87,6 @@ const TESTIMONIALS = [
         text: 'I bought a laptop here and the whole process was so smooth. The agreement made me feel completely safe.',
         rating: 5,
         avatar: 'A',
-        color: 'bg-zinc-100 text-zinc-700',
     },
     {
         name: 'Jean Paul N.',
@@ -94,7 +94,6 @@ const TESTIMONIALS = [
         text: 'FashaMarket helped me sell my old phone in 2 days. Very professional platform, I trust it completely.',
         rating: 5,
         avatar: 'J',
-        color: 'bg-zinc-100 text-zinc-700',
     },
     {
         name: 'Grace U.',
@@ -102,7 +101,6 @@ const TESTIMONIALS = [
         text: 'Love that sellers are verified. I finally trust buying second-hand online. Will use again!',
         rating: 5,
         avatar: 'G',
-        color: 'bg-zinc-100 text-zinc-700',
     },
 ]
 
@@ -116,70 +114,58 @@ export default function HomePage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
+            <SEO
+                title="Buy & Sell Second-Hand in Rwanda"
+                description="FashaMarket — Rwanda's trusted marketplace for second-hand electronics, clothing, furniture and more. Verified sellers, safe payments, fast delivery in Kigali."
+                keywords="buy sell Rwanda, second hand Kigali, marketplace Rwanda, used phones Rwanda, second hand clothes Kigali"
+            />
+
             <Navbar />
 
-            {/* ── HERO ──────────────────────────────────────────────────────────── */}
+            {/* ── HERO ── */}
             <section className="relative min-h-[92vh] flex items-center bg-zinc-900 overflow-hidden">
-                {/* Subtle texture */}
                 <div className="absolute inset-0 opacity-[0.03]"
-                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }}
-                />
-                {/* Subtle green glow bottom right */}
+                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
                 <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-[120px]" />
                 <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-zinc-700/30 rounded-full blur-[100px]" />
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
                     <div className="max-w-2xl">
-
-
-
-                        {/* Headline */}
                         <div className={`transition-all duration-700 delay-200 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                             <h1 className="text-5xl sm:text-6xl font-bold text-white leading-[1.1] tracking-tight">
                                 The smarter way
-                                <br />
-                                to buy & sell
-                                <br />
-                                <span className="text-brand-400">second-hand.</span>
+                                <br />to buy & sell
+                                <br /><span className="text-brand-400">second-hand.</span>
                             </h1>
                         </div>
 
-                        {/* Subtext */}
                         <div className={`transition-all duration-700 delay-300 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                             <p className="mt-6 text-lg text-zinc-400 max-w-lg leading-relaxed">
                                 Verified sellers, signed agreements, and structured delivery — all in one professional platform built for Rwanda.
                             </p>
                         </div>
 
-                        {/* CTAs */}
                         <div className={`transition-all duration-700 delay-500 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                             <div className="mt-10 flex flex-wrap gap-3">
-                                <Link
-                                    to="/products"
-                                    className="group inline-flex items-center gap-2 bg-white text-zinc-900 font-semibold px-7 py-3.5 rounded-xl transition-all duration-200 text-sm hover:bg-zinc-100 hover:scale-[1.02]"
-                                >
+                                <Link to="/products"
+                                    className="group inline-flex items-center gap-2 bg-white text-zinc-900 font-semibold px-7 py-3.5 rounded-xl transition-all duration-200 text-sm hover:bg-zinc-100 hover:scale-[1.02]">
                                     Browse Products
                                     <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                                 </Link>
-                                <Link
-                                    to="/register"
-                                    className="inline-flex items-center gap-2 bg-transparent text-white font-semibold px-7 py-3.5 rounded-xl border border-white/15 transition-all duration-200 text-sm hover:bg-white/5 hover:border-white/25"
-                                >
+                                <Link to="/register"
+                                    className="inline-flex items-center gap-2 bg-transparent text-white font-semibold px-7 py-3.5 rounded-xl border border-white/15 transition-all duration-200 text-sm hover:bg-white/5 hover:border-white/25">
                                     Start Selling
                                 </Link>
                             </div>
                         </div>
 
-                        {/* Social proof */}
                         <div className={`transition-all duration-700 delay-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                             <div className="mt-12 flex items-center gap-3 pt-8 border-t border-white/5">
                                 <div className="flex -space-x-2.5">
                                     {['A', 'J', 'G', 'M', 'E'].map((l, i) => (
-                                        <div
-                                            key={l}
+                                        <div key={l}
                                             className="w-8 h-8 rounded-full border-2 border-zinc-900 flex items-center justify-center text-white font-semibold text-xs"
-                                            style={{ background: ['#4ade80', '#60a5fa', '#fb923c', '#a78bfa', '#f472b6'][i] }}
-                                        >
+                                            style={{ background: ['#4ade80', '#60a5fa', '#fb923c', '#a78bfa', '#f472b6'][i] }}>
                                             {l}
                                         </div>
                                     ))}
@@ -197,7 +183,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── STATS ─────────────────────────────────────────────────────────── */}
+            {/* ── STATS ── */}
             <section className="bg-white border-y border-zinc-100 py-14">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
@@ -219,7 +205,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── FEATURES ──────────────────────────────────────────────────────── */}
+            {/* ── FEATURES ── */}
             <section className="py-24 bg-zinc-50">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
@@ -248,7 +234,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── CATEGORIES ────────────────────────────────────────────────────── */}
+            {/* ── CATEGORIES ── */}
             <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
@@ -257,7 +243,8 @@ export default function HomePage() {
                                 <p className="text-brand-600 font-semibold text-sm uppercase tracking-widest mb-3">Explore</p>
                                 <h2 className="text-4xl font-bold text-zinc-900">Shop by Category</h2>
                             </div>
-                            <Link to="/products" className="hidden sm:flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 transition-colors font-medium group">
+                            <Link to="/products"
+                                className="hidden sm:flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 transition-colors font-medium group">
                                 View all
                                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                             </Link>
@@ -267,10 +254,8 @@ export default function HomePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {CATEGORIES.map((cat, i) => (
                             <FadeUp key={cat.name} delay={i * 80}>
-                                <Link
-                                    to="/products"
-                                    className="group bg-zinc-50 hover:bg-zinc-900 rounded-2xl p-6 text-center border border-zinc-100 hover:border-zinc-900 transition-all duration-300 block"
-                                >
+                                <Link to="/products"
+                                    className="group bg-zinc-50 hover:bg-zinc-900 rounded-2xl p-6 text-center border border-zinc-100 hover:border-zinc-900 transition-all duration-300 block">
                                     <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300 inline-block">
                                         {cat.emoji}
                                     </div>
@@ -286,7 +271,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
+            {/* ── HOW IT WORKS ── */}
             <section className="py-24 bg-zinc-50">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
@@ -317,7 +302,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
+            {/* ── TESTIMONIALS ── */}
             <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
@@ -338,7 +323,7 @@ export default function HomePage() {
                                     </div>
                                     <p className="text-zinc-600 leading-relaxed flex-1 text-sm">"{t.text}"</p>
                                     <div className="flex items-center gap-3 mt-6 pt-5 border-t border-zinc-200">
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${t.color}`}>
+                                        <div className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center font-bold text-sm text-zinc-700">
                                             {t.avatar}
                                         </div>
                                         <div>
@@ -353,7 +338,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── CTA ───────────────────────────────────────────────────────────── */}
+            {/* ── CTA ── */}
             <section className="py-24 bg-zinc-900">
                 <div className="max-w-2xl mx-auto px-4 text-center">
                     <FadeUp>
@@ -364,17 +349,13 @@ export default function HomePage() {
                             Join thousands of Rwandans buying and selling safely on FashaMarket.
                         </p>
                         <div className="flex flex-wrap justify-center gap-3">
-                            <Link
-                                to="/register"
-                                className="group inline-flex items-center gap-2 bg-white text-zinc-900 font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-sm hover:bg-zinc-100 hover:scale-[1.02]"
-                            >
+                            <Link to="/register"
+                                className="group inline-flex items-center gap-2 bg-white text-zinc-900 font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-sm hover:bg-zinc-100 hover:scale-[1.02]">
                                 Create Free Account
                                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                             </Link>
-                            <Link
-                                to="/products"
-                                className="inline-flex items-center gap-2 bg-transparent text-white font-semibold px-8 py-3.5 rounded-xl border border-white/15 transition-all duration-200 text-sm hover:bg-white/5"
-                            >
+                            <Link to="/products"
+                                className="inline-flex items-center gap-2 bg-transparent text-white font-semibold px-8 py-3.5 rounded-xl border border-white/15 transition-all duration-200 text-sm hover:bg-white/5">
                                 Browse Products
                             </Link>
                         </div>
