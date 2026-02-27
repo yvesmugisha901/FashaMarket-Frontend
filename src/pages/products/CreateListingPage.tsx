@@ -8,7 +8,6 @@ import { Upload, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import api from '@/api/axios'
-import type { CreateProductInput } from '@/types'
 import SellerAgreementModal from '@/pages/seller/SellerAgreementModal'
 
 const schema = z.object({
@@ -18,6 +17,8 @@ const schema = z.object({
     condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
     category_id: z.string().min(1, 'Select a category'),
 })
+
+type FormData = z.infer<typeof schema>
 
 const CATEGORIES = [
     { id: '8c50f7f1-12a3-4065-93ec-7e46aa5f9467', name: 'Clothing' },
@@ -48,7 +49,7 @@ export default function CreateListingPage() {
         setValue,
         setError,
         formState: { errors },
-    } = useForm<Omit<CreateProductInput, 'images'>>({
+    } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: { condition: 'GOOD' },
     })
@@ -81,7 +82,7 @@ export default function CreateListingPage() {
     }
 
     const mutation = useMutation({
-        mutationFn: (data: Omit<CreateProductInput, 'images'>) =>
+        mutationFn: (data: FormData) =>
             productsApi.create({ ...data, images }),
         onSuccess: () => navigate('/dashboard'),
         onError: () => setError('root', { message: 'Failed to create listing. Try again.' }),
@@ -94,7 +95,6 @@ export default function CreateListingPage() {
         <div className="min-h-screen bg-zinc-50">
             <Navbar />
 
-            {/* Seller Agreement Modal */}
             {showAgreement && !agreedToTerms && (
                 <SellerAgreementModal
                     commissionRate={commissionRate}
@@ -107,7 +107,6 @@ export default function CreateListingPage() {
             )}
 
             <div className="max-w-2xl mx-auto px-4 py-10">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
                         <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Create Listing</h1>
@@ -183,7 +182,6 @@ export default function CreateListingPage() {
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6 space-y-5">
                         <h2 className="text-sm font-semibold text-zinc-900">Product Details</h2>
 
-                        {/* Title */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">Title</label>
                             <input
@@ -198,7 +196,6 @@ export default function CreateListingPage() {
                             )}
                         </div>
 
-                        {/* Description */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">Description</label>
                             <textarea
@@ -213,7 +210,6 @@ export default function CreateListingPage() {
                             )}
                         </div>
 
-                        {/* Category */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">Category</label>
                             <select
@@ -237,7 +233,6 @@ export default function CreateListingPage() {
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6 space-y-5">
                         <h2 className="text-sm font-semibold text-zinc-900">Pricing & Condition</h2>
 
-                        {/* Price */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">Price (RWF)</label>
                             <div className="relative">
@@ -255,7 +250,6 @@ export default function CreateListingPage() {
                                 </p>
                             )}
 
-                            {/* Commission breakdown */}
                             {price > 0 && (
                                 <div className="mt-3 bg-zinc-50 border border-zinc-100 rounded-xl p-3 space-y-1.5">
                                     <div className="flex justify-between text-xs">
@@ -274,7 +268,6 @@ export default function CreateListingPage() {
                             )}
                         </div>
 
-                        {/* Condition selector */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-2">Condition</label>
                             <div className="grid grid-cols-2 gap-2">
@@ -282,23 +275,20 @@ export default function CreateListingPage() {
                                     <button
                                         key={c.value}
                                         type="button"
-                                        onClick={() => setValue('condition', c.value as any)}
+                                        onClick={() => setValue('condition', c.value as FormData['condition'])}
                                         className={`p-3 rounded-xl border text-left transition-all ${selectedCondition === c.value
                                             ? 'border-zinc-900 bg-zinc-900 text-white'
                                             : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300 text-zinc-700'
                                             }`}
                                     >
                                         <p className="text-sm font-semibold">{c.label}</p>
-                                        <p className={`text-xs mt-0.5 ${selectedCondition === c.value ? 'text-zinc-400' : 'text-zinc-400'}`}>
-                                            {c.desc}
-                                        </p>
+                                        <p className="text-xs mt-0.5 text-zinc-400">{c.desc}</p>
                                     </button>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Error */}
                     {errors.root && (
                         <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -306,7 +296,6 @@ export default function CreateListingPage() {
                         </div>
                     )}
 
-                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={mutation.isPending || uploading || !agreedToTerms}
