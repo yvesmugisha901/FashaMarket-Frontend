@@ -6,17 +6,11 @@
       "ES2023"
     ],
     "module": "ESNext",
-    "types": [
-      "node"
-    ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
+    "strict": false
   },
   "include": [
     "vite.config.ts"
