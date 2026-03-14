@@ -16,6 +16,8 @@ import DashboardPage from '@/pages/dashboard/DashboardPage'
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import SettingsPage from './pages/dashboard/SettingsPage'
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 
 export default function App() {
   return (
@@ -28,6 +30,8 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Authenticated */}
           <Route element={<ProtectedRoute />}>
