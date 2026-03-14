@@ -188,16 +188,14 @@ export default function HomePage() {
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
                         {[
-                            { icon: <Users className="h-5 w-5" />, target: 500, suffix: '+', label: 'Registered Users' },
-                            { icon: <Package className="h-5 w-5" />, target: 1200, suffix: '+', label: 'Products Listed' },
-                            { icon: <Star className="h-5 w-5" />, target: 48, suffix: '/5', label: 'Average Rating' },
-                            { icon: <TrendingUp className="h-5 w-5" />, target: 98, suffix: '%', label: 'Satisfaction Rate' },
+                            { icon: <Users className="h-5 w-5" />, value: '500+', label: 'Registered Users' },
+                            { icon: <Package className="h-5 w-5" />, value: '1,200+', label: 'Products Listed' },
+                            { icon: <Star className="h-5 w-5" />, value: '4.8/5', label: 'Average Rating' },
+                            { icon: <TrendingUp className="h-5 w-5" />, value: '98%', label: 'Satisfaction Rate' },
                         ].map((stat) => (
                             <div key={stat.label}>
                                 <div className="flex justify-center mb-2 text-zinc-400">{stat.icon}</div>
-                                <p className="text-3xl font-bold text-zinc-900 tracking-tight">
-                                    <Counter target={stat.target} suffix={stat.suffix} />
-                                </p>
+                                <p className="text-3xl font-bold text-zinc-900 tracking-tight">{stat.value}</p>
                                 <p className="text-zinc-500 text-sm mt-1">{stat.label}</p>
                             </div>
                         ))}
