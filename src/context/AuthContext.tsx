@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         localStorage.removeItem('token')
         setUser(null)
+        window.location.href = '/'
     }
-
     return (
         <AuthContext.Provider
             value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}
