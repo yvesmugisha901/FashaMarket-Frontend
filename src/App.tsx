@@ -21,6 +21,11 @@ import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import TermsPage from '@/pages/legal/TermsPage'
 import PrivacyPage from '@/pages/legal/PrivacyPage'
+import HowWeVerifyPage from '@/pages/legal/HowWeVerifyPage'
+import PurchaseAgreementsPage from '@/pages/legal/PurchaseAgreementsPage'
+import DeliveryPolicyPage from '@/pages/legal/DeliveryPolicyPage'
+import ReturnPolicyPage from '@/pages/legal/ReturnPolicyPage'
+import ReportProblemPage from '@/pages/legal/ReportProblemPage'
 
 export default function App() {
   return (
@@ -37,6 +42,12 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/how-we-verify" element={<HowWeVerifyPage />} />
+          <Route path="/purchase-agreements" element={<PurchaseAgreementsPage />} />
+          <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
+          <Route path="/return-policy" element={<ReturnPolicyPage />} />
+          <Route path="/report-problem" element={<ReportProblemPage />} />
+
 
           {/* Authenticated */}
           <Route element={<ProtectedRoute />}>

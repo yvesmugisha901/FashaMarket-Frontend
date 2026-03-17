@@ -60,9 +60,11 @@ export default function Footer() {
                         <ul className="space-y-2 text-sm">
                             <li><Link to="/terms" className="hover:text-brand-400 transition-colors">Terms of Service</Link></li>
                             <li><Link to="/privacy" className="hover:text-brand-400 transition-colors">Privacy Policy</Link></li>
-                            <li><Link to="/contact" className="hover:text-brand-400 transition-colors">Report a Problem</Link></li>
-                            <li><span className="text-zinc-500">How We Verify Sellers</span></li>
-                            <li><span className="text-zinc-500">Purchase Agreements</span></li>
+                            <li><Link to="/how-we-verify" className="hover:text-brand-400 transition-colors">How We Verify Sellers</Link></li>
+                            <li><Link to="/purchase-agreements" className="hover:text-brand-400 transition-colors">Purchase Agreements</Link></li>
+                            <li><Link to="/delivery-policy" className="hover:text-brand-400 transition-colors">Delivery Policy</Link></li>
+                            <li><Link to="/return-policy" className="hover:text-brand-400 transition-colors">Return Policy</Link></li>
+                            <li><Link to="/report-problem" className="hover:text-brand-400 transition-colors">Report a Problem</Link></li>
                         </ul>
                     </div>
                 </div>
