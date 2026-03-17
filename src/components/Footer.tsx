@@ -4,7 +4,7 @@ import logo from '@/assets/fasha2.jpeg'
 
 export default function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-400">
+        <footer className="bg-zinc-900 text-zinc-400">
             <div className="max-w-7xl mx-auto px-4 py-16">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
@@ -35,10 +35,10 @@ export default function Footer() {
                         <h3 className="text-white font-semibold mb-4">Marketplace</h3>
                         <ul className="space-y-2 text-sm">
                             <li><Link to="/products" className="hover:text-brand-400 transition-colors">Browse Products</Link></li>
-                            <li><Link to="/products" className="hover:text-brand-400 transition-colors">Electronics</Link></li>
-                            <li><Link to="/products" className="hover:text-brand-400 transition-colors">Clothing</Link></li>
-                            <li><Link to="/products" className="hover:text-brand-400 transition-colors">Furniture</Link></li>
-                            <li><Link to="/products" className="hover:text-brand-400 transition-colors">Shoes</Link></li>
+                            <li><Link to="/products?category=electronics" className="hover:text-brand-400 transition-colors">Electronics</Link></li>
+                            <li><Link to="/products?category=clothing" className="hover:text-brand-400 transition-colors">Clothing</Link></li>
+                            <li><Link to="/products?category=furniture" className="hover:text-brand-400 transition-colors">Furniture</Link></li>
+                            <li><Link to="/products?category=shoes" className="hover:text-brand-400 transition-colors">Shoes</Link></li>
                         </ul>
                     </div>
 
@@ -50,28 +50,29 @@ export default function Footer() {
                             <li><Link to="/login" className="hover:text-brand-400 transition-colors">Log In</Link></li>
                             <li><Link to="/dashboard" className="hover:text-brand-400 transition-colors">Dashboard</Link></li>
                             <li><Link to="/sell" className="hover:text-brand-400 transition-colors">Sell an Item</Link></li>
+                            <li><Link to="/contact" className="hover:text-brand-400 transition-colors">Contact Support</Link></li>
                         </ul>
                     </div>
 
-                    {/* Trust */}
+                    {/* Legal */}
                     <div>
-                        <h3 className="text-white font-semibold mb-4">Trust & Safety</h3>
+                        <h3 className="text-white font-semibold mb-4">Trust & Legal</h3>
                         <ul className="space-y-2 text-sm">
-                            <li><span className="hover:text-brand-400 transition-colors cursor-pointer">How We Verify Sellers</span></li>
-                            <li><span className="hover:text-brand-400 transition-colors cursor-pointer">Purchase Agreements</span></li>
-                            <li><span className="hover:text-brand-400 transition-colors cursor-pointer">Delivery Policy</span></li>
-                            <li><span className="hover:text-brand-400 transition-colors cursor-pointer">Return Policy</span></li>
-                            <li><span className="hover:text-brand-400 transition-colors cursor-pointer">Report a Problem</span></li>
+                            <li><Link to="/terms" className="hover:text-brand-400 transition-colors">Terms of Service</Link></li>
+                            <li><Link to="/privacy" className="hover:text-brand-400 transition-colors">Privacy Policy</Link></li>
+                            <li><Link to="/contact" className="hover:text-brand-400 transition-colors">Report a Problem</Link></li>
+                            <li><span className="text-zinc-500">How We Verify Sellers</span></li>
+                            <li><span className="text-zinc-500">Purchase Agreements</span></li>
                         </ul>
                     </div>
                 </div>
 
                 {/* Bottom bar */}
-                <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+                <div className="border-t border-zinc-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
                     <p>© {new Date().getFullYear()} FashaMarket. All rights reserved.</p>
                     <div className="flex gap-6">
-                        <span className="hover:text-brand-400 cursor-pointer transition-colors">Privacy Policy</span>
-                        <span className="hover:text-brand-400 cursor-pointer transition-colors">Terms of Service</span>
+                        <Link to="/privacy" className="hover:text-brand-400 transition-colors">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-brand-400 transition-colors">Terms of Service</Link>
                     </div>
                 </div>
             </div>

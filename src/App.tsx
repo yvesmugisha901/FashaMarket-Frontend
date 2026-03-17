@@ -3,6 +3,7 @@ import { AuthProvider } from '@/context/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import AdminRoute from '@/components/AdminRoute'
 
+
 // Pages
 import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/auth/LoginPage'
@@ -18,6 +19,8 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import SettingsPage from './pages/dashboard/SettingsPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
+import TermsPage from '@/pages/legal/TermsPage'
+import PrivacyPage from '@/pages/legal/PrivacyPage'
 
 export default function App() {
   return (
@@ -32,6 +35,8 @@ export default function App() {
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
 
           {/* Authenticated */}
           <Route element={<ProtectedRoute />}>
