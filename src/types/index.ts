@@ -50,6 +50,7 @@ export interface Product {
     category_id: string
     category_name: string
     images: string[]
+    stock_quantity: number
     created_at: string
 }
 
@@ -60,6 +61,7 @@ export interface CreateProductInput {
     condition: ProductCondition
     category_id: string
     images: string[]
+    stock_quantity: number
 }
 
 export interface ProductFilters {
@@ -74,7 +76,7 @@ export interface ProductFilters {
 
 // ─── Order ───────────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'AWAITING_CONFIRMATION'
 export type PaymentMethod = 'COD' | 'MOBILE_MONEY'
 
 export interface Order {
@@ -83,9 +85,14 @@ export interface Order {
     product_id: string
     product_title: string
     product_price: number
+    product_images: string[]
     status: OrderStatus
     agreement_signed: boolean
     payment_method: PaymentMethod
+    payment_reference?: string
+    commission_rate?: number
+    commission_amount?: number
+    seller_amount?: number
     created_at: string
 }
 

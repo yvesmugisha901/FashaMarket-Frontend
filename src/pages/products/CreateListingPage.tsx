@@ -16,6 +16,7 @@ const schema = z.object({
     price: z.coerce.number().positive('Price must be positive'),
     condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
     category_id: z.string().min(1, 'Select a category'),
+    stock_quantity: z.coerce.number().min(1, 'Must have at least 1 in stock').max(100, 'Maximum 100'),
 })
 
 const CATEGORIES = [
@@ -33,7 +34,6 @@ const CONDITIONS = [
     { value: 'FAIR', label: 'Fair', desc: 'Visible wear but works perfectly' },
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyForm = any
 
 export default function CreateListingPage() {
@@ -52,7 +52,7 @@ export default function CreateListingPage() {
         formState: { errors },
     } = useForm<AnyForm>({
         resolver: zodResolver(schema) as AnyForm,
-        defaultValues: { condition: 'GOOD' },
+        defaultValues: { condition: 'GOOD', stock_quantity: 1 },
     })
 
     const selectedCondition = watch('condition')
@@ -228,10 +228,11 @@ export default function CreateListingPage() {
                         </div>
                     </div>
 
-                    {/* Price & Condition */}
+                    {/* Price, Stock & Condition */}
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6 space-y-5">
-                        <h2 className="text-sm font-semibold text-zinc-900">Pricing & Condition</h2>
+                        <h2 className="text-sm font-semibold text-zinc-900">Pricing, Stock & Condition</h2>
 
+                        {/* Price */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">Price (RWF)</label>
                             <div className="relative">
@@ -267,6 +268,31 @@ export default function CreateListingPage() {
                             )}
                         </div>
 
+                        {/* Stock Quantity */}
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                                Quantity in Stock
+                                <span className="text-zinc-400 font-normal ml-1">(how many units do you have?)</span>
+                            </label>
+                            <input
+                                {...register('stock_quantity')}
+                                type="number"
+                                min="1"
+                                max="100"
+                                className="w-full px-3.5 py-2.5 border border-zinc-200 rounded-xl text-sm bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:bg-white transition-all placeholder:text-zinc-400"
+                                placeholder="1"
+                            />
+                            {errors.stock_quantity && (
+                                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> {errors.stock_quantity.message as string}
+                                </p>
+                            )}
+                            <p className="text-xs text-zinc-400 mt-1.5">
+                                e.g. if you have 2 pairs of the same shoes, enter 2
+                            </p>
+                        </div>
+
+                        {/* Condition */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-2">Condition</label>
                             <div className="grid grid-cols-2 gap-2">
