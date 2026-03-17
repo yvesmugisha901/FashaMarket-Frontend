@@ -26,6 +26,8 @@ import PurchaseAgreementsPage from '@/pages/legal/PurchaseAgreementsPage'
 import DeliveryPolicyPage from '@/pages/legal/DeliveryPolicyPage'
 import ReturnPolicyPage from '@/pages/legal/ReturnPolicyPage'
 import ReportProblemPage from '@/pages/legal/ReportProblemPage'
+import AboutPage from '@/pages/AboutPage'
+import ContactPage from '@/pages/ContactPage'
 
 export default function App() {
   return (
@@ -47,6 +49,8 @@ export default function App() {
           <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
           <Route path="/return-policy" element={<ReturnPolicyPage />} />
           <Route path="/report-problem" element={<ReportProblemPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
 
           {/* Authenticated */}

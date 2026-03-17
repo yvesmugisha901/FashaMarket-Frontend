@@ -24,7 +24,6 @@ export default function Navbar() {
 
     return (
         <>
-            {/* Fixed navbar */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
                 ? 'bg-white shadow-md border-b border-zinc-100'
                 : 'bg-white/80 backdrop-blur-md border-b border-zinc-100'
@@ -32,13 +31,9 @@ export default function Navbar() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
 
-                        {/* Logo — large and clear */}
+                        {/* Logo */}
                         <Link to="/" className="flex-shrink-0">
-                            <img
-                                src={logo}
-                                alt="FashaMarket"
-                                className="h-16 w-auto object-contain"
-                            />
+                            <img src={logo} alt="FashaMarket" className="h-16 w-auto object-contain" />
                         </Link>
 
                         {/* Search — desktop */}
@@ -60,45 +55,43 @@ export default function Navbar() {
                         </div>
 
                         {/* Nav links — desktop */}
-                        <div className="hidden md:flex items-center gap-2 text-sm">
-                            <Link
-                                to="/products"
-                                className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all"
-                            >
+                        <div className="hidden md:flex items-center gap-1 text-sm">
+                            <Link to="/products"
+                                className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all">
                                 Browse
+                            </Link>
+                            <Link to="/about"
+                                className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all">
+                                About
+                            </Link>
+                            <Link to="/contact"
+                                className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all">
+                                Contact
                             </Link>
 
                             {isAuthenticated ? (
                                 <>
                                     {user?.role === 'ADMIN' && (
-                                        <Link
-                                            to="/admin"
-                                            className="text-brand-600 font-semibold px-3 py-2 rounded-lg hover:bg-brand-50 transition-all"
-                                        >
+                                        <Link to="/admin"
+                                            className="text-brand-600 font-semibold px-3 py-2 rounded-lg hover:bg-brand-50 transition-all">
                                             Admin
                                         </Link>
                                     )}
                                     {user?.role === 'SELLER' && (
-                                        <Link
-                                            to="/sell"
-                                            className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-all"
-                                        >
+                                        <Link to="/sell"
+                                            className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-all ml-1">
                                             <Plus className="h-4 w-4" />
                                             Sell Item
                                         </Link>
                                     )}
                                     {user?.role === 'BUYER' && (
-                                        <Link
-                                            to="/products"
-                                            className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-all"
-                                        >
+                                        <Link to="/products"
+                                            className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-all ml-1">
                                             Shop Now
                                         </Link>
                                     )}
-                                    <Link
-                                        to="/dashboard"
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-zinc-50 transition-all"
-                                    >
+                                    <Link to="/dashboard"
+                                        className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-zinc-50 transition-all ml-1">
                                         <div className="w-9 h-9 bg-zinc-900 rounded-full flex items-center justify-center text-white font-bold text-sm">
                                             {user?.name[0].toUpperCase()}
                                         </div>
@@ -116,16 +109,12 @@ export default function Navbar() {
                                 </>
                             ) : (
                                 <>
-                                    <Link
-                                        to="/login"
-                                        className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all"
-                                    >
+                                    <Link to="/login"
+                                        className="text-zinc-600 hover:text-zinc-900 font-medium px-3 py-2 rounded-lg hover:bg-zinc-50 transition-all ml-1">
                                         Log in
                                     </Link>
-                                    <Link
-                                        to="/register"
-                                        className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all"
-                                    >
+                                    <Link to="/register"
+                                        className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all">
                                         Get Started
                                     </Link>
                                 </>
@@ -163,6 +152,14 @@ export default function Navbar() {
                             <Link to="/products" onClick={() => setMenuOpen(false)}
                                 className="flex items-center px-3 py-2.5 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors">
                                 Browse
+                            </Link>
+                            <Link to="/about" onClick={() => setMenuOpen(false)}
+                                className="flex items-center px-3 py-2.5 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors">
+                                About
+                            </Link>
+                            <Link to="/contact" onClick={() => setMenuOpen(false)}
+                                className="flex items-center px-3 py-2.5 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors">
+                                Contact
                             </Link>
 
                             {isAuthenticated ? (
@@ -205,7 +202,6 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* Spacer so content doesn't hide behind fixed navbar */}
             <div className="h-20" />
         </>
     )
