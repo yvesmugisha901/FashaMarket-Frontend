@@ -87,12 +87,6 @@ export default function AboutPage() {
 
                 <div className="relative max-w-5xl mx-auto px-4 py-24 w-full">
                     <div className="max-w-3xl">
-                        <div className={`transition-all duration-700 delay-100 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-                            <span className="inline-flex items-center gap-2 bg-white/10 text-white/70 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-white/10">
-                                <Heart className="h-3 w-3 text-red-400" />
-                                Made in Kigali, Rwanda
-                            </span>
-                        </div>
 
                         <div className={`transition-all duration-700 delay-200 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                             <h1 className="text-5xl sm:text-6xl font-bold text-white leading-[1.1] tracking-tight">
