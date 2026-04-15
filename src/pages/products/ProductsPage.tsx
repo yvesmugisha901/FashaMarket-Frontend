@@ -4,16 +4,9 @@ import { Search, SlidersHorizontal, X } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import ProductCard from '@/components/ProductCard'
 import { productsApi } from '@/api/products'
+import { categoriesApi } from '@/api/categories'
 import type { ProductFilters } from '@/types'
 import SEO from '@/components/SEO'
-
-const CATEGORIES = [
-    { id: '8c50f7f1-12a3-4065-93ec-7e46aa5f9467', name: 'Clothing' },
-    { id: '3755c6fb-92a9-4a82-a9c1-fbf58ec25858', name: 'Electronics' },
-    { id: 'c285703a-0abc-4a25-a6a9-0ae6c7090657', name: 'Furniture' },
-    { id: '5b7a77be-ee7b-4ab7-b28f-9365194ce8cc', name: 'Shoes' },
-    { id: '3cf97dc8-aa1f-4ecf-ab87-c40dacd6ac14', name: 'Other' },
-]
 
 const CONDITIONS = [
     { value: 'NEW', label: 'New' },
@@ -26,6 +19,11 @@ export default function ProductsPage() {
     const [search, setSearch] = useState('')
     const [showFilters, setShowFilters] = useState(false)
     const [filters, setFilters] = useState<ProductFilters>({ page: 1, limit: 20 })
+
+    const { data: categoriesData } = useQuery({
+        queryKey: ['categories'],
+        queryFn: () => categoriesApi.getAll(),
+    })
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ['products', filters],
@@ -107,7 +105,7 @@ export default function ProductsPage() {
                                 onChange={(e) => handleFilter('category_id', e.target.value)}
                             >
                                 <option value="">All Categories</option>
-                                {CATEGORIES.map((c) => (
+                                {categoriesData?.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
