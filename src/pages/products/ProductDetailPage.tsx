@@ -1,10 +1,13 @@
+// frontend/src/pages/products/ProductDetailPage.tsx
+
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { BadgeCheck, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BadgeCheck, ArrowLeft, ChevronLeft, ChevronRight, ShoppingCart, Check, Loader2 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import { useAuth } from '@/context/AuthContext'
+import { useCart } from '@/context/CartContext'
 import ReviewSection from '@/components/ReviewSection'
 import SEO from '@/components/SEO'
 
@@ -18,7 +21,9 @@ const CONDITION_LABEL: Record<string, { label: string; color: string }> = {
 export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>()
     const { isAuthenticated, user } = useAuth()
+    const { isInCart, addToCart, removeFromCart } = useCart()
     const [imgIndex, setImgIndex] = useState(0)
+    const [cartLoading, setCartLoading] = useState(false)
 
     const { data: product, isLoading, isError } = useQuery({
         queryKey: ['product', id],
@@ -54,9 +59,23 @@ export default function ProductDetailPage() {
     const images = product.images?.length ? product.images : []
     const condition = CONDITION_LABEL[product.condition] || { label: product.condition, color: 'bg-zinc-100 text-zinc-600' }
 
-    // Is this the seller's own product?
     const isOwnProduct = user?.role === 'SELLER' && product.seller_id === user?.id
     const isSeller = user?.role === 'SELLER'
+    const isBuyer = isAuthenticated && !isSeller
+    const inCart = isInCart(product.id)
+
+    const handleCartClick = async () => {
+        setCartLoading(true)
+        try {
+            if (inCart) {
+                await removeFromCart(product.id)
+            } else {
+                await addToCart(product.id)
+            }
+        } finally {
+            setCartLoading(false)
+        }
+    }
 
     return (
         <div className="min-h-screen bg-zinc-50">
@@ -95,7 +114,6 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
 
-                            {/* Prev/Next arrows */}
                             {images.length > 1 && (
                                 <>
                                     <button
@@ -114,15 +132,13 @@ export default function ProductDetailPage() {
                             )}
                         </div>
 
-                        {/* Thumbnails */}
                         {images.length > 1 && (
                             <div className="flex gap-2">
                                 {images.map((img: string, i: number) => (
                                     <button
                                         key={img}
                                         onClick={() => setImgIndex(i)}
-                                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-zinc-900' : 'border-transparent opacity-60 hover:opacity-100'
-                                            }`}
+                                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-zinc-900' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                     >
                                         <img src={img} alt="" className="w-full h-full object-cover" />
                                     </button>
@@ -172,7 +188,7 @@ export default function ProductDetailPage() {
 
                         <p className="text-zinc-600 leading-relaxed text-sm">{product.description}</p>
 
-                        {/* Buy button — logic */}
+                        {/* Action buttons */}
                         <div className="space-y-3">
                             {!isAuthenticated && (
                                 <Link to="/login"
@@ -195,13 +211,34 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
 
-                            {isAuthenticated && !isSeller && (
-                                <Link
-                                    to={`/checkout/${product.id}`}
-                                    className="bg-zinc-900 hover:bg-zinc-700 text-white font-bold w-full py-3.5 rounded-xl transition-all text-sm text-center block"
-                                >
-                                    Buy Now
-                                </Link>
+                            {isBuyer && (
+                                <div className="flex gap-2">
+                                    {/* Add to Cart */}
+                                    <button
+                                        onClick={handleCartClick}
+                                        disabled={cartLoading}
+                                        className={`flex items-center justify-center gap-2 flex-1 py-3.5 rounded-xl border font-semibold text-sm transition-all disabled:opacity-50 ${inCart
+                                            ? 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-700'
+                                            : 'border-zinc-200 bg-white text-zinc-900 hover:border-zinc-900'
+                                            }`}
+                                    >
+                                        {cartLoading ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : inCart ? (
+                                            <><Check className="h-4 w-4" /> In Cart</>
+                                        ) : (
+                                            <><ShoppingCart className="h-4 w-4" /> Add to Cart</>
+                                        )}
+                                    </button>
+
+                                    {/* Buy Now */}
+                                    <Link
+                                        to={`/checkout/${product.id}`}
+                                        className="flex items-center justify-center flex-1 bg-zinc-900 hover:bg-zinc-700 text-white font-bold py-3.5 rounded-xl transition-all text-sm"
+                                    >
+                                        Buy Now
+                                    </Link>
+                                </div>
                             )}
 
                             <p className="text-xs text-zinc-400 text-center">
