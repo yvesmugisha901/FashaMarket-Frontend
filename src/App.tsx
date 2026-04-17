@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
+import { CartProvider } from '@/context/CartContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import AdminRoute from '@/components/AdminRoute'
-
 
 // Pages
 import HomePage from '@/pages/HomePage'
@@ -34,43 +34,44 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/how-we-verify" element={<HowWeVerifyPage />} />
-          <Route path="/purchase-agreements" element={<PurchaseAgreementsPage />} />
-          <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
-          <Route path="/return-policy" element={<ReturnPolicyPage />} />
-          <Route path="/report-problem" element={<ReportProblemPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/cart" element={<CartPage />} />
+        <CartProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/how-we-verify" element={<HowWeVerifyPage />} />
+            <Route path="/purchase-agreements" element={<PurchaseAgreementsPage />} />
+            <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
+            <Route path="/return-policy" element={<ReturnPolicyPage />} />
+            <Route path="/report-problem" element={<ReportProblemPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/cart" element={<CartPage />} />
 
+            {/* Authenticated */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/sell" element={<CreateListingPage />} />
+              <Route path="/checkout/:productId" element={<CheckoutPage />} />
+              <Route path="/orders/:id" element={<OrderDetailPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
 
-          {/* Authenticated */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/sell" element={<CreateListingPage />} />
-            <Route path="/checkout/:productId" element={<CheckoutPage />} />
-            <Route path="/orders/:id" element={<OrderDetailPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
+            {/* Admin only */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminDashboardPage />} />
+            </Route>
 
-          {/* Admin only */}
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AdminDashboardPage />} />
-          </Route>
-
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </CartProvider>
       </AuthProvider>
     </BrowserRouter>
   )

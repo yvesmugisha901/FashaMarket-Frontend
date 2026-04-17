@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import './index.css'
-import { CartProvider } from '@/context/CartContext'
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,9 +19,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <CartProvider>
-          <App />
-        </CartProvider>
+
+        <App />
+
       </QueryClientProvider>
     </HelmetProvider>
   </React.StrictMode>
