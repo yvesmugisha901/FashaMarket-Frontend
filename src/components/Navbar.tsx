@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, Plus, Menu, X, Search } from 'lucide-react'
+import { LogOut, Plus, Menu, X, Search, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useCart } from '@/context/CartContext'
 import logo from '@/assets/fasha1.jpeg'
 
 export default function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
+    const { count } = useCart()
     const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
@@ -90,6 +92,25 @@ export default function Navbar() {
                                             Shop Now
                                         </Link>
                                     )}
+
+                                    {/* 🛒 Cart — BUYER only, desktop */}
+                                    {user?.role === 'BUYER' && (
+                                        <Link
+                                            to="/cart"
+                                            className="relative p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 rounded-lg transition-all ml-1"
+                                            title="My Cart"
+                                        >
+                                            <ShoppingCart className="h-5 w-5" />
+                                            {count > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 bg-zinc-900 text-white
+                                                                 text-[10px] font-bold w-4 h-4 rounded-full
+                                                                 flex items-center justify-center leading-none">
+                                                    {count > 9 ? '9+' : count}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    )}
+
                                     <Link to="/dashboard"
                                         className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-zinc-50 transition-all ml-1">
                                         <div className="w-9 h-9 bg-zinc-900 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -121,13 +142,32 @@ export default function Navbar() {
                             )}
                         </div>
 
-                        {/* Mobile menu button */}
-                        <button
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            className="md:hidden p-2 text-zinc-600 hover:bg-zinc-50 rounded-lg transition-all"
-                        >
-                            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                        </button>
+                        {/* Mobile: cart icon + hamburger */}
+                        <div className="md:hidden flex items-center gap-1">
+                            {/* 🛒 Cart icon — mobile, BUYER only */}
+                            {isAuthenticated && user?.role === 'BUYER' && (
+                                <Link
+                                    to="/cart"
+                                    className="relative p-2 text-zinc-600 hover:bg-zinc-50 rounded-lg transition-all"
+                                >
+                                    <ShoppingCart className="h-5 w-5" />
+                                    {count > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 bg-zinc-900 text-white
+                                                         text-[10px] font-bold w-4 h-4 rounded-full
+                                                         flex items-center justify-center leading-none">
+                                            {count > 9 ? '9+' : count}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
+
+                            <button
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="p-2 text-zinc-600 hover:bg-zinc-50 rounded-lg transition-all"
+                            >
+                                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mobile menu */}
@@ -168,6 +208,23 @@ export default function Navbar() {
                                         className="flex items-center px-3 py-2.5 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors">
                                         Dashboard
                                     </Link>
+
+                                    {/* Cart link in mobile menu — BUYER only */}
+                                    {user?.role === 'BUYER' && (
+                                        <Link to="/cart" onClick={() => setMenuOpen(false)}
+                                            className="flex items-center justify-between px-3 py-2.5 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors">
+                                            <span className="flex items-center gap-2">
+                                                <ShoppingCart className="h-4 w-4" />
+                                                My Cart
+                                            </span>
+                                            {count > 0 && (
+                                                <span className="bg-zinc-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    )}
+
                                     {user?.role === 'SELLER' && (
                                         <Link to="/sell" onClick={() => setMenuOpen(false)}
                                             className="flex items-center gap-2 px-3 py-2.5 text-zinc-900 font-semibold rounded-xl hover:bg-zinc-50 transition-colors">

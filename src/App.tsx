@@ -28,6 +28,7 @@ import ReturnPolicyPage from '@/pages/legal/ReturnPolicyPage'
 import ReportProblemPage from '@/pages/legal/ReportProblemPage'
 import AboutPage from '@/pages/AboutPage'
 import ContactPage from '@/pages/ContactPage'
+import CartPage from './pages/CartPage'
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/report-problem" element={<ReportProblemPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/cart" element={<CartPage />} />
 
 
           {/* Authenticated */}

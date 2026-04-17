@@ -76,8 +76,15 @@ export interface ProductFilters {
 
 // ─── Order ───────────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'AWAITING_CONFIRMATION'
-export type PaymentMethod = 'COD' | 'MOBILE_MONEY'
+export type OrderStatus =
+    | 'PENDING'
+    | 'PAID'
+    | 'SHIPPED'
+    | 'DELIVERED'
+    | 'CANCELLED'
+    | 'AWAITING_CONFIRMATION'
+
+export type PaymentMethod = 'MOMO' | 'BANK_TRANSFER' | 'COD' | 'CARD'
 
 export interface Order {
     id: string
