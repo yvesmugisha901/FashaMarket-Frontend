@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { BadgeCheck, ArrowLeft, ChevronLeft, ChevronRight, ShoppingCart, Check, Loader2 } from 'lucide-react'
+import {
+    BadgeCheck, ArrowLeft, ChevronLeft, ChevronRight,
+    ShoppingCart, Check, Loader2, Package
+} from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import { useAuth } from '@/context/AuthContext'
@@ -64,7 +67,12 @@ export default function ProductDetailPage() {
     const isBuyer = isAuthenticated && !isSeller
     const inCart = isInCart(product.id)
 
+    // ✅ Stock checks
+    const isOutOfStock = product.stock_quantity <= 0 || product.status === 'SOLD'
+    const isLowStock = !isOutOfStock && product.stock_quantity <= 3
+
     const handleCartClick = async () => {
+        if (isOutOfStock) return
         setCartLoading(true)
         try {
             if (inCart) {
@@ -91,29 +99,49 @@ export default function ProductDetailPage() {
             <Navbar />
 
             <div className="max-w-5xl mx-auto px-4 py-8">
-                <Link to="/products"
-                    className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-6 transition-colors">
+                <Link
+                    to="/products"
+                    className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-6 transition-colors"
+                >
                     <ArrowLeft className="h-4 w-4" />
                     Back to products
                 </Link>
 
                 <div className="grid md:grid-cols-2 gap-8">
 
-                    {/* Images */}
+                    {/* ── Images ── */}
                     <div className="space-y-3">
                         <div className="aspect-square bg-zinc-100 rounded-2xl overflow-hidden relative group">
                             {images[imgIndex] ? (
                                 <img
                                     src={images[imgIndex]}
                                     alt={product.title}
-                                    className="w-full h-full object-cover"
+                                    className={`w-full h-full object-cover transition-all ${isOutOfStock ? 'grayscale' : ''}`}
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-zinc-300 text-sm">
-                                    No image
+                                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
+                                    <Package className="h-12 w-12" />
+                                    <span className="text-sm">No image</span>
                                 </div>
                             )}
 
+                            {/* ✅ Sold Out overlay on main image */}
+                            {isOutOfStock && (
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                    <span className="bg-white text-zinc-900 text-sm font-black px-5 py-2 rounded-full uppercase tracking-widest shadow-lg">
+                                        Sold Out
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* ✅ Low stock badge on image */}
+                            {isLowStock && (
+                                <div className="absolute top-3 left-3 bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow">
+                                    Only {product.stock_quantity} left!
+                                </div>
+                            )}
+
+                            {/* Image nav arrows */}
                             {images.length > 1 && (
                                 <>
                                     <button
@@ -132,13 +160,17 @@ export default function ProductDetailPage() {
                             )}
                         </div>
 
+                        {/* Thumbnail strip */}
                         {images.length > 1 && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 {images.map((img: string, i: number) => (
                                     <button
                                         key={img}
                                         onClick={() => setImgIndex(i)}
-                                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-zinc-900' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex
+                                            ? 'border-zinc-900'
+                                            : 'border-transparent opacity-60 hover:opacity-100'
+                                            }`}
                                     >
                                         <img src={img} alt="" className="w-full h-full object-cover" />
                                     </button>
@@ -147,7 +179,7 @@ export default function ProductDetailPage() {
                         )}
                     </div>
 
-                    {/* Details */}
+                    {/* ── Details ── */}
                     <div className="space-y-5">
                         <div>
                             <span className="text-xs text-zinc-400 uppercase tracking-widest font-medium">
@@ -163,10 +195,26 @@ export default function ProductDetailPage() {
                             <span className="text-lg font-normal text-zinc-400 ml-1">RWF</span>
                         </p>
 
+                        {/* Condition + stock badges */}
                         <div className="flex items-center gap-2 flex-wrap">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${condition.color}`}>
                                 {condition.label}
                             </span>
+
+                            {/* ✅ Stock remaining badge */}
+                            {isOutOfStock ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                    Out of Stock
+                                </span>
+                            ) : isLowStock ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                    {product.stock_quantity} remaining
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                    {product.stock_quantity} in stock
+                                </span>
+                            )}
                         </div>
 
                         {/* Seller */}
@@ -179,7 +227,7 @@ export default function ProductDetailPage() {
                                 <p className="text-xs text-zinc-400">Seller</p>
                             </div>
                             {product.seller_verified && (
-                                <div className="flex items-center gap-1 text-xs text-brand-600 font-semibold flex-shrink-0">
+                                <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold flex-shrink-0">
                                     <BadgeCheck className="h-4 w-4" />
                                     Verified
                                 </div>
@@ -188,21 +236,27 @@ export default function ProductDetailPage() {
 
                         <p className="text-zinc-600 leading-relaxed text-sm">{product.description}</p>
 
-                        {/* Action buttons */}
+                        {/* ── Action buttons ── */}
                         <div className="space-y-3">
+
+                            {/* Not logged in */}
                             {!isAuthenticated && (
-                                <Link to="/login"
-                                    className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold w-full py-3.5 rounded-xl transition-all text-sm text-center block">
+                                <Link
+                                    to="/login"
+                                    className="bg-zinc-900 hover:bg-zinc-700 text-white font-semibold w-full py-3.5 rounded-xl transition-all text-sm text-center block"
+                                >
                                     Log in to Buy
                                 </Link>
                             )}
 
+                            {/* Own product */}
                             {isAuthenticated && isOwnProduct && (
                                 <div className="bg-zinc-50 border border-zinc-200 rounded-xl py-3.5 text-center">
                                     <p className="text-sm text-zinc-500 font-medium">This is your listing</p>
                                 </div>
                             )}
 
+                            {/* Seller viewing someone else's product */}
                             {isAuthenticated && isSeller && !isOwnProduct && (
                                 <div className="bg-amber-50 border border-amber-100 rounded-xl py-3.5 text-center">
                                     <p className="text-sm text-amber-700 font-medium">
@@ -211,39 +265,70 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
 
+                            {/* ✅ Buyer actions — split: available vs sold out */}
                             {isBuyer && (
-                                <div className="flex gap-2">
-                                    {/* Add to Cart */}
-                                    <button
-                                        onClick={handleCartClick}
-                                        disabled={cartLoading}
-                                        className={`flex items-center justify-center gap-2 flex-1 py-3.5 rounded-xl border font-semibold text-sm transition-all disabled:opacity-50 ${inCart
-                                            ? 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-700'
-                                            : 'border-zinc-200 bg-white text-zinc-900 hover:border-zinc-900'
-                                            }`}
-                                    >
-                                        {cartLoading ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : inCart ? (
-                                            <><Check className="h-4 w-4" /> In Cart</>
-                                        ) : (
-                                            <><ShoppingCart className="h-4 w-4" /> Add to Cart</>
-                                        )}
-                                    </button>
+                                <>
+                                    {isOutOfStock ? (
+                                        /* ── Sold out state ── */
+                                        <div className="space-y-3">
+                                            <div className="bg-zinc-100 border border-zinc-200 rounded-xl py-4 text-center">
+                                                <p className="text-sm font-bold text-zinc-500">This item is sold out</p>
+                                                <p className="text-xs text-zinc-400 mt-1">
+                                                    Check back later or browse similar products
+                                                </p>
+                                            </div>
+                                            <Link
+                                                to="/products"
+                                                className="block text-center text-sm font-semibold text-zinc-600 hover:text-zinc-900 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 transition-all"
+                                            >
+                                                Browse Similar Products
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        /* ── Available state ── */
+                                        <div className="flex gap-2">
+                                            {/* Add to Cart */}
+                                            <button
+                                                onClick={handleCartClick}
+                                                disabled={cartLoading}
+                                                className={`flex items-center justify-center gap-2 flex-1 py-3.5 rounded-xl border font-semibold text-sm transition-all disabled:opacity-50 ${inCart
+                                                    ? 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-700'
+                                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-zinc-900'
+                                                    }`}
+                                            >
+                                                {cartLoading ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : inCart ? (
+                                                    <><Check className="h-4 w-4" /> In Cart</>
+                                                ) : (
+                                                    <><ShoppingCart className="h-4 w-4" /> Add to Cart</>
+                                                )}
+                                            </button>
 
-                                    {/* Buy Now */}
-                                    <Link
-                                        to={`/checkout/${product.id}`}
-                                        className="flex items-center justify-center flex-1 bg-zinc-900 hover:bg-zinc-700 text-white font-bold py-3.5 rounded-xl transition-all text-sm"
-                                    >
-                                        Buy Now
-                                    </Link>
-                                </div>
+                                            {/* Buy Now → goes to cart page where order is placed */}
+                                            <Link
+                                                to="/cart"
+                                                onClick={async () => {
+                                                    if (!inCart) {
+                                                        setCartLoading(true)
+                                                        await addToCart(product.id).catch(() => { })
+                                                        setCartLoading(false)
+                                                    }
+                                                }}
+                                                className="flex items-center justify-center flex-1 bg-zinc-900 hover:bg-zinc-700 text-white font-bold py-3.5 rounded-xl transition-all text-sm"
+                                            >
+                                                Buy Now
+                                            </Link>
+                                        </div>
+                                    )}
+                                </>
                             )}
 
-                            <p className="text-xs text-zinc-400 text-center">
-                                A digital agreement will be required before your order is confirmed.
-                            </p>
+                            {!isOutOfStock && (
+                                <p className="text-xs text-zinc-400 text-center">
+                                    A digital agreement will be required before your order is confirmed.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

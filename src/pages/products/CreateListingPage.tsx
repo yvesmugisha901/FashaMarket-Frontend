@@ -1,10 +1,12 @@
+// frontend/src/pages/seller/CreateListingPage.tsx
+
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Upload, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, X, Loader2, CheckCircle, AlertCircle, Plus, Minus } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { productsApi } from '@/api/products'
 import api from '@/api/axios'
@@ -34,12 +36,16 @@ const CONDITIONS = [
     { value: 'FAIR', label: 'Fair', desc: 'Visible wear but works perfectly' },
 ]
 
+const MAX_IMAGES = 5
+
 type AnyForm = any
 
 export default function CreateListingPage() {
     const navigate = useNavigate()
     const [images, setImages] = useState<string[]>([])
-    const [uploading, setUploading] = useState(false)
+    // ✅ Track upload state per-file so multiple uploads work correctly
+    const [uploadingCount, setUploadingCount] = useState(0)
+    const [uploadError, setUploadError] = useState<string | null>(null)
     const [agreedToTerms, setAgreedToTerms] = useState(false)
     const [showAgreement, setShowAgreement] = useState(true)
 
@@ -57,40 +63,82 @@ export default function CreateListingPage() {
 
     const selectedCondition = watch('condition')
     const price = watch('price')
+    const stockQty = watch('stock_quantity') || 1
 
+    // ✅ Fixed: uploads each file independently so multiple images work
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (!files || files.length === 0) return
-        setUploading(true)
-        try {
-            for (const file of Array.from(files)) {
+
+        // How many slots are left
+        const remaining = MAX_IMAGES - images.length
+        if (remaining <= 0) return
+
+        setUploadError(null)
+
+        // Only take as many files as we have slots for
+        const filesToUpload = Array.from(files).slice(0, remaining)
+        setUploadingCount(prev => prev + filesToUpload.length)
+
+        // Upload all files concurrently
+        const results = await Promise.allSettled(
+            filesToUpload.map(async (file) => {
                 const formData = new FormData()
                 formData.append('image', file)
                 const res = await api.post<{ url: string }>('/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 })
-                setImages((prev) => [...prev, res.data.url])
+                return res.data.url
+            })
+        )
+
+        const uploaded: string[] = []
+        const failed: number[] = []
+
+        results.forEach((result, i) => {
+            if (result.status === 'fulfilled') {
+                uploaded.push(result.value)
+            } else {
+                failed.push(i + 1)
             }
-        } catch {
-            alert('Image upload failed. Try again.')
-        } finally {
-            setUploading(false)
+        })
+
+        if (uploaded.length > 0) {
+            setImages(prev => [...prev, ...uploaded])
         }
+
+        if (failed.length > 0) {
+            setUploadError(
+                `${failed.length} image${failed.length > 1 ? 's' : ''} failed to upload. Please try again.`
+            )
+        }
+
+        setUploadingCount(prev => prev - filesToUpload.length)
+
+        // ✅ Reset input so same file can be re-uploaded if needed
+        e.target.value = ''
     }
 
     const removeImage = (url: string) => {
-        setImages((prev) => prev.filter((i) => i !== url))
+        setImages(prev => prev.filter(i => i !== url))
+        setUploadError(null)
+    }
+
+    // ✅ Reorder: move image to front (make it the main photo)
+    const makeMain = (url: string) => {
+        setImages(prev => [url, ...prev.filter(i => i !== url)])
     }
 
     const mutation = useMutation({
-        mutationFn: (data: AnyForm) =>
-            productsApi.create({ ...data, images }),
+        mutationFn: (data: AnyForm) => productsApi.create({ ...data, images }),
         onSuccess: () => navigate('/dashboard'),
         onError: () => setError('root', { message: 'Failed to create listing. Try again.' }),
     })
 
     const commissionRate = 10
     const sellerReceives = price ? Math.round(price * (1 - commissionRate / 100)) : 0
+    const isUploading = uploadingCount > 0
+    const canAddMoreImages = images.length < MAX_IMAGES
 
     return (
         <div className="min-h-screen bg-zinc-50">
@@ -124,60 +172,155 @@ export default function CreateListingPage() {
 
                 <form onSubmit={handleSubmit((d: AnyForm) => mutation.mutate(d))} className="space-y-6">
 
-                    {/* Image Upload */}
+                    {/* ── Image Upload ── */}
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
-                        <label className="block text-sm font-semibold text-zinc-900 mb-4">
-                            Product Photos
-                            <span className="text-zinc-400 font-normal ml-1">(add up to 5)</span>
-                        </label>
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="block text-sm font-semibold text-zinc-900">
+                                Product Photos
+                                <span className="text-zinc-400 font-normal ml-1">
+                                    ({images.length}/{MAX_IMAGES} added)
+                                </span>
+                            </label>
+                            {images.length > 0 && canAddMoreImages && (
+                                <label className={`flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    {isUploading ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <Plus className="h-3.5 w-3.5" />
+                                    )}
+                                    Add more photos
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleImageUpload}
+                                        disabled={isUploading || !canAddMoreImages}
+                                        className="hidden"
+                                    />
+                                </label>
+                            )}
+                        </div>
 
+                        {/* ✅ Upload error message */}
+                        {uploadError && (
+                            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-4">
+                                <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                                <p className="text-xs text-red-600">{uploadError}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadError(null)}
+                                    className="ml-auto text-red-400 hover:text-red-600"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Image grid */}
                         {images.length > 0 && (
                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
                                 {images.map((url, i) => (
-                                    <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-zinc-100 group">
+                                    <div
+                                        key={url}
+                                        className="relative aspect-square rounded-xl overflow-hidden bg-zinc-100 group"
+                                    >
                                         <img src={url} alt="product" className="w-full h-full object-cover" />
+
+                                        {/* Main badge */}
                                         {i === 0 && (
                                             <span className="absolute bottom-1 left-1 text-[10px] bg-zinc-900 text-white px-1.5 py-0.5 rounded-md font-medium">
                                                 Main
                                             </span>
                                         )}
+
+                                        {/* ✅ "Set as main" button for non-main images */}
+                                        {i !== 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => makeMain(url)}
+                                                className="absolute bottom-1 left-1 text-[9px] bg-zinc-700/80 text-white px-1.5 py-0.5 rounded-md font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                                            >
+                                                Set main
+                                            </button>
+                                        )}
+
+                                        {/* Remove button */}
                                         <button
                                             type="button"
                                             onClick={() => removeImage(url)}
-                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"
                                         >
                                             <X className="h-3 w-3" />
                                         </button>
                                     </div>
                                 ))}
-                                {images.length < 5 && (
-                                    <label className="aspect-square rounded-xl border-2 border-dashed border-zinc-200 flex items-center justify-center cursor-pointer hover:border-zinc-400 transition-colors">
-                                        {uploading
-                                            ? <Loader2 className="h-5 w-5 text-zinc-400 animate-spin" />
-                                            : <Upload className="h-5 w-5 text-zinc-300" />
-                                        }
-                                        <input type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={uploading} className="hidden" />
+
+                                {/* ✅ Uploading placeholders — one per in-progress upload */}
+                                {Array.from({ length: uploadingCount }).map((_, i) => (
+                                    <div
+                                        key={`uploading-${i}`}
+                                        className="aspect-square rounded-xl bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center"
+                                    >
+                                        <Loader2 className="h-5 w-5 text-zinc-400 animate-spin" />
+                                    </div>
+                                ))}
+
+                                {/* Add more slot */}
+                                {canAddMoreImages && uploadingCount === 0 && (
+                                    <label className="aspect-square rounded-xl border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-colors gap-1">
+                                        <Plus className="h-5 w-5 text-zinc-300" />
+                                        <span className="text-[10px] text-zinc-400 font-medium">Add</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={handleImageUpload}
+                                            disabled={isUploading}
+                                            className="hidden"
+                                        />
                                     </label>
                                 )}
                             </div>
                         )}
 
+                        {/* Empty drop zone */}
                         {images.length === 0 && (
-                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-xl p-10 cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-all">
-                                {uploading
-                                    ? <Loader2 className="h-8 w-8 text-zinc-400 animate-spin" />
-                                    : <Upload className="h-8 w-8 text-zinc-300" />
-                                }
-                                <span className="text-sm font-medium text-zinc-500 mt-3">
-                                    {uploading ? 'Uploading...' : 'Click to upload photos'}
-                                </span>
-                                <span className="text-xs text-zinc-400 mt-1">PNG, JPG up to 5MB each</span>
-                                <input type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={uploading} className="hidden" />
+                            <label className={`flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-xl p-10 cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-all ${isUploading ? 'pointer-events-none' : ''}`}>
+                                {isUploading ? (
+                                    <>
+                                        <Loader2 className="h-8 w-8 text-zinc-400 animate-spin" />
+                                        <span className="text-sm font-medium text-zinc-500 mt-3">
+                                            Uploading {uploadingCount} photo{uploadingCount > 1 ? 's' : ''}...
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-8 w-8 text-zinc-300" />
+                                        <span className="text-sm font-medium text-zinc-500 mt-3">
+                                            Click to upload photos
+                                        </span>
+                                        <span className="text-xs text-zinc-400 mt-1">
+                                            PNG, JPG up to 5MB · max {MAX_IMAGES} photos
+                                        </span>
+                                    </>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageUpload}
+                                    disabled={isUploading}
+                                    className="hidden"
+                                />
                             </label>
                         )}
+
+                        <p className="text-xs text-zinc-400 mt-3">
+                            💡 Tip: The first photo is your main listing image. Hover a photo to set it as main or remove it.
+                        </p>
                     </div>
 
-                    {/* Basic Info */}
+                    {/* ── Basic Info ── */}
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6 space-y-5">
                         <h2 className="text-sm font-semibold text-zinc-900">Product Details</h2>
 
@@ -228,7 +371,7 @@ export default function CreateListingPage() {
                         </div>
                     </div>
 
-                    {/* Price, Stock & Condition */}
+                    {/* ── Price, Stock & Condition ── */}
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6 space-y-5">
                         <h2 className="text-sm font-semibold text-zinc-900">Pricing, Stock & Condition</h2>
 
@@ -268,27 +411,54 @@ export default function CreateListingPage() {
                             )}
                         </div>
 
-                        {/* Stock Quantity */}
+                        {/* ✅ Stock Quantity — with +/- buttons for easier input */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 mb-1.5">
                                 Quantity in Stock
-                                <span className="text-zinc-400 font-normal ml-1">(how many units do you have?)</span>
+                                <span className="text-zinc-400 font-normal ml-1">(how many do you have to sell?)</span>
                             </label>
-                            <input
-                                {...register('stock_quantity')}
-                                type="number"
-                                min="1"
-                                max="100"
-                                className="w-full px-3.5 py-2.5 border border-zinc-200 rounded-xl text-sm bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:bg-white transition-all placeholder:text-zinc-400"
-                                placeholder="1"
-                            />
+
+                            <div className="flex items-center gap-3">
+                                {/* Minus */}
+                                <button
+                                    type="button"
+                                    onClick={() => setValue('stock_quantity', Math.max(1, stockQty - 1))}
+                                    className="w-10 h-10 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center transition-colors flex-shrink-0"
+                                >
+                                    <Minus className="h-4 w-4 text-zinc-600" />
+                                </button>
+
+                                {/* Input */}
+                                <input
+                                    {...register('stock_quantity')}
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    className="flex-1 px-3.5 py-2.5 border border-zinc-200 rounded-xl text-sm bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:bg-white transition-all text-center font-bold text-lg"
+                                />
+
+                                {/* Plus */}
+                                <button
+                                    type="button"
+                                    onClick={() => setValue('stock_quantity', Math.min(100, stockQty + 1))}
+                                    className="w-10 h-10 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center transition-colors flex-shrink-0"
+                                >
+                                    <Plus className="h-4 w-4 text-zinc-600" />
+                                </button>
+                            </div>
+
                             {errors.stock_quantity && (
                                 <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
                                     <AlertCircle className="h-3 w-3" /> {errors.stock_quantity.message as string}
                                 </p>
                             )}
-                            <p className="text-xs text-zinc-400 mt-1.5">
-                                e.g. if you have 2 pairs of the same shoes, enter 2
+
+                            {/* ✅ Helpful context based on quantity */}
+                            <p className="text-xs text-zinc-400 mt-2">
+                                {stockQty === 1
+                                    ? 'You have 1 unit — once sold, the listing will be marked as sold out.'
+                                    : `You have ${stockQty} units — buyers can order up to ${stockQty} times before this sells out.`
+                                }
                             </p>
                         </div>
 
@@ -307,13 +477,16 @@ export default function CreateListingPage() {
                                             }`}
                                     >
                                         <p className="text-sm font-semibold">{c.label}</p>
-                                        <p className="text-xs mt-0.5 text-zinc-400">{c.desc}</p>
+                                        <p className={`text-xs mt-0.5 ${selectedCondition === c.value ? 'text-zinc-400' : 'text-zinc-400'}`}>
+                                            {c.desc}
+                                        </p>
                                     </button>
                                 ))}
                             </div>
                         </div>
                     </div>
 
+                    {/* Root error */}
                     {errors.root && (
                         <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -321,15 +494,21 @@ export default function CreateListingPage() {
                         </div>
                     )}
 
+                    {/* Submit */}
                     <button
                         type="submit"
-                        disabled={mutation.isPending || uploading || !agreedToTerms}
+                        disabled={mutation.isPending || isUploading || !agreedToTerms}
                         className="w-full bg-zinc-900 hover:bg-zinc-700 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
                     >
                         {mutation.isPending ? (
                             <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
                                 Submitting...
+                            </>
+                        ) : isUploading ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Uploading photos...
                             </>
                         ) : (
                             'Submit Listing for Review'

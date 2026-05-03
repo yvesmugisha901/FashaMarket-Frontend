@@ -10,6 +10,7 @@ export interface CartItem {
     images: string[]
     condition: 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR'
     product_status: string
+    stock_quantity: number          // ✅ FIX: was missing — CartPage needs this for sold-out/low-stock UI
     seller_name: string
     seller_verified: boolean
     category_name: string
