@@ -37,6 +37,13 @@ export default function OrderDetailPage() {
         },
     })
 
+    // ✅ NEW: seller marks the item as shipped
+    const markShippedMutation = useMutation({
+        mutationFn: () => api.post(`/orders/${id}/mark-shipped`),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['order', id] }),
+    })
+
+    // Buyer confirms they received the item — only works after SHIPPED
     const confirmReceivedMutation = useMutation({
         mutationFn: () => api.post(`/orders/${id}/confirm-received`),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['order', id] }),
@@ -69,8 +76,13 @@ export default function OrderDetailPage() {
         </div>
     )
 
-    const isMobileMoney = order.payment_method === 'MOBILE_MONEY'
+    const isMobileMoney = order.payment_method === 'MOBILE_MONEY' || order.payment_method === 'MOMO'
     const isCOD = order.payment_method === 'COD'
+
+    // ✅ Who is viewing this order?
+    const isBuyer = order.user_id === user?.id
+    const isSeller = order.seller_id === user?.id
+
     const buyerSigned = !!order.buyer_signed_at
     const awaitingConfirmation = order.status === 'AWAITING_CONFIRMATION'
     const isPaid = ['PAID', 'SHIPPED', 'DELIVERED'].includes(order.status)
@@ -78,19 +90,19 @@ export default function OrderDetailPage() {
     const isDelivered = order.status === 'DELIVERED'
     const isCancelled = order.status === 'CANCELLED'
 
-    // Steps based on payment method
+    // Steps shown to buyer — 3 parties each do one action after payment
     const STEPS = isMobileMoney ? [
         { label: 'Order Placed', done: true },
         { label: 'Agreement Signed', done: buyerSigned },
         { label: 'Payment Submitted', done: awaitingConfirmation || isPaid },
-        { label: 'Payment Confirmed', done: isPaid },
-        { label: 'Shipped', done: isShipped },
-        { label: 'Delivered', done: isDelivered },
+        { label: 'Payment Confirmed', done: isPaid },           // Admin
+        { label: 'Seller Shipped', done: isShipped },        // Seller
+        { label: 'Buyer Confirmed', done: isDelivered },      // Buyer
     ] : [
         { label: 'Order Placed', done: true },
         { label: 'Agreement Signed', done: buyerSigned },
-        { label: 'Shipped', done: isShipped },
-        { label: 'Delivered', done: isDelivered },
+        { label: 'Seller Shipped', done: isShipped },        // Seller
+        { label: 'Buyer Confirmed', done: isDelivered },      // Buyer
     ]
 
     const currentStep = STEPS.filter(s => s.done).length - 1
@@ -130,8 +142,8 @@ export default function OrderDetailPage() {
                         </div>
                         <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${isDelivered ? 'bg-green-100 text-green-700' :
                             isCancelled ? 'bg-red-100 text-red-700' :
-                                isPaid ? 'bg-blue-100 text-blue-700' :
-                                    isShipped ? 'bg-violet-100 text-violet-700' :
+                                isShipped ? 'bg-violet-100 text-violet-700' :
+                                    isPaid ? 'bg-blue-100 text-blue-700' :
                                         awaitingConfirmation ? 'bg-orange-100 text-orange-700' :
                                             'bg-amber-100 text-amber-700'
                             }`}>
@@ -151,6 +163,11 @@ export default function OrderDetailPage() {
                             <p className="font-semibold text-zinc-900 truncate">{order.product_title}</p>
                             <p className="text-xs text-zinc-400 mt-0.5">
                                 {isMobileMoney ? '📱 Mobile Money' : '💵 Cash on Delivery'}
+                            </p>
+                            {/* Show role badge */}
+                            <p className="text-xs mt-1">
+                                {isBuyer && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">You're the Buyer</span>}
+                                {isSeller && <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold">You're the Seller</span>}
                             </p>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -200,8 +217,12 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── STEP 1: Sign Agreement ── */}
-                {!buyerSigned && !isCancelled && (
+                {/* ══════════════════════════════════
+                    BUYER ACTIONS
+                ══════════════════════════════════ */}
+
+                {/* STEP 1 (Buyer): Sign Agreement */}
+                {isBuyer && !buyerSigned && !isCancelled && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center">
@@ -239,7 +260,7 @@ export default function OrderDetailPage() {
                 )}
 
                 {/* Agreement signed confirmation */}
-                {buyerSigned && !isPaid && !awaitingConfirmation && (
+                {isBuyer && buyerSigned && !isPaid && !awaitingConfirmation && (
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                         <div>
@@ -251,8 +272,8 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── STEP 2: Pay via Mobile Money ── */}
-                {buyerSigned && isMobileMoney && order.status === 'PENDING' && (
+                {/* STEP 2 (Buyer): Pay via Mobile Money */}
+                {isBuyer && buyerSigned && isMobileMoney && order.status === 'PENDING' && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <h2 className="font-bold text-zinc-900 mb-1">Pay via Mobile Money</h2>
                         <p className="text-sm text-zinc-500 mb-5">
@@ -261,7 +282,6 @@ export default function OrderDetailPage() {
                             </span> to:
                         </p>
 
-                        {/* MTN number */}
                         <div className="bg-zinc-900 rounded-xl p-5 mb-5 text-center">
                             <div className="flex items-center justify-center gap-2 mb-1">
                                 <Phone className="h-4 w-4 text-zinc-400" />
@@ -303,8 +323,8 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── COD Info ── */}
-                {buyerSigned && isCOD && order.status === 'PENDING' && (
+                {/* COD Info (Buyer) */}
+                {isBuyer && buyerSigned && isCOD && order.status === 'PENDING' && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <h2 className="font-bold text-zinc-900 mb-2">Cash on Delivery</h2>
                         <p className="text-sm text-zinc-500 mb-4">
@@ -316,13 +336,13 @@ export default function OrderDetailPage() {
                             <p>✅ Agreement signed — waiting for seller to ship</p>
                             <p>🚚 You'll be notified when your item is on the way</p>
                             <p>💵 Pay the delivery person upon receipt</p>
-                            <p>📦 Confirm delivery in this page once received</p>
+                            <p>📦 Confirm delivery on this page once received</p>
                         </div>
                     </div>
                 )}
 
-                {/* ── Awaiting payment confirmation ── */}
-                {awaitingConfirmation && (
+                {/* Awaiting payment confirmation (Buyer) */}
+                {isBuyer && awaitingConfirmation && (
                     <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6">
                         <div className="flex items-start gap-3">
                             <Clock className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
@@ -338,19 +358,21 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── Payment confirmed ── */}
-                {isPaid && !isShipped && (
+                {/* Payment confirmed, waiting for seller to ship (Buyer) */}
+                {isBuyer && isPaid && !isShipped && (
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-center gap-3">
                         <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
                         <div>
                             <p className="text-sm font-bold text-blue-800">Payment Confirmed!</p>
-                            <p className="text-xs text-blue-600 mt-0.5">The seller has been notified and is preparing your item.</p>
+                            <p className="text-xs text-blue-600 mt-0.5">
+                                The seller has been notified and is preparing your item. You'll get an update when it ships.
+                            </p>
                         </div>
                     </div>
                 )}
 
-                {/* ── Shipped ── */}
-                {isShipped && !isDelivered && (
+                {/* Item shipped, waiting for buyer to confirm (Buyer) */}
+                {isBuyer && isShipped && !isDelivered && (
                     <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5 flex items-center gap-3">
                         <Truck className="h-5 w-5 text-violet-600 flex-shrink-0" />
                         <div>
@@ -360,12 +382,20 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── Confirm Received ── */}
-                {isShipped && !isDelivered && (
+                {/* ✅ BUYER: Confirm Received — only shown when status is SHIPPED */}
+                {isBuyer && isShipped && !isDelivered && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
-                        <h2 className="font-bold text-zinc-900 mb-2">Confirm Delivery</h2>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
+                                <Package className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="font-bold text-zinc-900">Confirm Delivery</h2>
+                                <p className="text-xs text-zinc-400">Only you can mark this order as delivered</p>
+                            </div>
+                        </div>
                         <p className="text-sm text-zinc-500 mb-4">
-                            Received your item in good condition? Confirm to complete the order.
+                            Have you received your item in good condition? This action is final and releases payment to the seller.
                         </p>
                         <button
                             onClick={() => confirmReceivedMutation.mutate()}
@@ -378,18 +408,82 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ── Delivered ── */}
+                {/* ══════════════════════════════════
+                    SELLER ACTIONS
+                ══════════════════════════════════ */}
+
+                {/* Seller: waiting for buyer to pay */}
+                {isSeller && !isPaid && !isCancelled && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                        <div>
+                            <p className="text-sm font-bold text-amber-800">Waiting for Payment</p>
+                            <p className="text-xs text-amber-700 mt-0.5">
+                                {awaitingConfirmation
+                                    ? 'Buyer has submitted payment — admin is verifying.'
+                                    : 'Waiting for buyer to complete payment.'}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ✅ SELLER: Mark as Shipped — only shown when status is PAID */}
+                {isSeller && order.status === 'PAID' && (
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
+                                <Truck className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="font-bold text-zinc-900">Mark as Shipped</h2>
+                                <p className="text-xs text-zinc-400">Payment has been confirmed — ship the item</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-zinc-500 mb-4">
+                            Once you've handed the item to a courier or the buyer, tap below to notify them it's on the way.
+                        </p>
+                        <button
+                            onClick={() => markShippedMutation.mutate()}
+                            disabled={markShippedMutation.isPending}
+                            className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-50 text-sm flex items-center justify-center gap-2"
+                        >
+                            <Truck className="h-4 w-4" />
+                            {markShippedMutation.isPending ? 'Updating...' : 'Item Shipped — Notify Buyer'}
+                        </button>
+                    </div>
+                )}
+
+                {/* Seller: item shipped, waiting for buyer to confirm */}
+                {isSeller && isShipped && !isDelivered && (
+                    <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5 flex items-center gap-3">
+                        <Truck className="h-5 w-5 text-violet-600 flex-shrink-0" />
+                        <div>
+                            <p className="text-sm font-bold text-violet-800">Item Shipped</p>
+                            <p className="text-xs text-violet-600 mt-0.5">
+                                Waiting for buyer to confirm they received it.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ══════════════════════════════════
+                    SHARED: Delivered state
+                ══════════════════════════════════ */}
                 {isDelivered && (
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-6 text-center">
                         <Package className="h-12 w-12 text-green-500 mx-auto mb-3" />
                         <h3 className="font-black text-green-800 text-lg">Order Complete!</h3>
                         <p className="text-sm text-green-700 mt-1">
-                            This order was successfully delivered and confirmed.
+                            {isBuyer
+                                ? 'You confirmed delivery. Thank you for shopping on FashaMarket!'
+                                : 'The buyer confirmed delivery. Your payment will be processed shortly.'}
                         </p>
-                        <Link to="/products"
-                            className="inline-flex items-center gap-2 mt-4 bg-green-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-green-700 transition-all">
-                            Shop Again
-                        </Link>
+                        {isBuyer && (
+                            <Link to="/products"
+                                className="inline-flex items-center gap-2 mt-4 bg-green-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-green-700 transition-all">
+                                Shop Again
+                            </Link>
+                        )}
                     </div>
                 )}
 
