@@ -37,15 +37,18 @@ export default function OrderDetailPage() {
         },
     })
 
-    // ✅ NEW: seller marks the item as shipped
     const markShippedMutation = useMutation({
         mutationFn: () => api.post(`/orders/${id}/mark-shipped`),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['order', id] }),
     })
 
-    // Buyer confirms they received the item — only works after SHIPPED
     const confirmReceivedMutation = useMutation({
         mutationFn: () => api.post(`/orders/${id}/confirm-received`),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['order', id] }),
+    })
+
+    const cancelMutation = useMutation({
+        mutationFn: () => api.post(`/orders/${id}/cancel`),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['order', id] }),
     })
 
@@ -78,11 +81,8 @@ export default function OrderDetailPage() {
 
     const isMobileMoney = order.payment_method === 'MOBILE_MONEY' || order.payment_method === 'MOMO'
     const isCOD = order.payment_method === 'COD'
-
-    // ✅ Who is viewing this order?
     const isBuyer = order.user_id === user?.id
     const isSeller = order.seller_id === user?.id
-
     const buyerSigned = !!order.buyer_signed_at
     const awaitingConfirmation = order.status === 'AWAITING_CONFIRMATION'
     const isPaid = ['PAID', 'SHIPPED', 'DELIVERED'].includes(order.status)
@@ -90,19 +90,18 @@ export default function OrderDetailPage() {
     const isDelivered = order.status === 'DELIVERED'
     const isCancelled = order.status === 'CANCELLED'
 
-    // Steps shown to buyer — 3 parties each do one action after payment
     const STEPS = isMobileMoney ? [
         { label: 'Order Placed', done: true },
         { label: 'Agreement Signed', done: buyerSigned },
         { label: 'Payment Submitted', done: awaitingConfirmation || isPaid },
-        { label: 'Payment Confirmed', done: isPaid },           // Admin
-        { label: 'Seller Shipped', done: isShipped },        // Seller
-        { label: 'Buyer Confirmed', done: isDelivered },      // Buyer
+        { label: 'Payment Confirmed', done: isPaid },
+        { label: 'Seller Shipped', done: isShipped },
+        { label: 'Delivered', done: isDelivered },
     ] : [
         { label: 'Order Placed', done: true },
         { label: 'Agreement Signed', done: buyerSigned },
-        { label: 'Seller Shipped', done: isShipped },        // Seller
-        { label: 'Buyer Confirmed', done: isDelivered },      // Buyer
+        { label: 'Seller Shipped', done: isShipped },
+        { label: 'Delivered', done: isDelivered },
     ]
 
     const currentStep = STEPS.filter(s => s.done).length - 1
@@ -113,7 +112,6 @@ export default function OrderDetailPage() {
 
             <div className="max-w-lg mx-auto px-4 py-8 space-y-5">
 
-                {/* Back */}
                 <Link to="/dashboard"
                     className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
                     <ArrowLeft className="h-4 w-4" /> Back to Dashboard
@@ -147,7 +145,12 @@ export default function OrderDetailPage() {
                                         awaitingConfirmation ? 'bg-orange-100 text-orange-700' :
                                             'bg-amber-100 text-amber-700'
                             }`}>
-                            {awaitingConfirmation ? 'Awaiting Confirmation' : order.status}
+                            {isCancelled ? 'Cancelled' :
+                                isDelivered ? 'Delivered' :
+                                    isShipped ? 'Shipped' :
+                                        isPaid ? 'Paid' :
+                                            awaitingConfirmation ? 'Awaiting Confirmation' :
+                                                'Pending'}
                         </span>
                     </div>
 
@@ -156,7 +159,7 @@ export default function OrderDetailPage() {
                         <div className="w-16 h-16 bg-zinc-100 rounded-xl overflow-hidden flex-shrink-0">
                             {order.product_images?.[0] && (
                                 <img src={order.product_images[0]} alt={order.product_title}
-                                    className="w-full h-full object-cover" />
+                                    className="w-full h-full object-cover" loading="lazy" />
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -164,7 +167,6 @@ export default function OrderDetailPage() {
                             <p className="text-xs text-zinc-400 mt-0.5">
                                 {isMobileMoney ? '📱 Mobile Money' : '💵 Cash on Delivery'}
                             </p>
-                            {/* Show role badge */}
                             <p className="text-xs mt-1">
                                 {isBuyer && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">You're the Buyer</span>}
                                 {isSeller && <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold">You're the Seller</span>}
@@ -183,7 +185,10 @@ export default function OrderDetailPage() {
                 {isCancelled && (
                     <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-center gap-3">
                         <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                        <p className="text-sm font-medium text-red-700">This order has been cancelled.</p>
+                        <div>
+                            <p className="text-sm font-bold text-red-700">Order Cancelled</p>
+                            <p className="text-xs text-red-500 mt-0.5">This order has been cancelled. Stock has been restored.</p>
+                        </div>
                     </div>
                 )}
 
@@ -194,11 +199,9 @@ export default function OrderDetailPage() {
                         <div className="space-y-3">
                             {STEPS.map((step, i) => (
                                 <div key={step.label} className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all ${step.done
-                                        ? 'bg-zinc-900 text-white'
-                                        : i === currentStep + 1
-                                            ? 'bg-zinc-100 text-zinc-400 ring-2 ring-zinc-200'
-                                            : 'bg-zinc-50 text-zinc-300'
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all ${step.done ? 'bg-zinc-900 text-white' :
+                                        i === currentStep + 1 ? 'bg-zinc-100 text-zinc-400 ring-2 ring-zinc-200' :
+                                            'bg-zinc-50 text-zinc-300'
                                         }`}>
                                         {step.done ? <CheckCircle className="h-4 w-4" /> : i + 1}
                                     </div>
@@ -217,11 +220,33 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ══════════════════════════════════
-                    BUYER ACTIONS
-                ══════════════════════════════════ */}
+                {/* ── BUYER ACTIONS ── */}
 
-                {/* STEP 1 (Buyer): Sign Agreement */}
+                {/* Cancel Order — only when PENDING and not yet signed */}
+                {isBuyer && order.status === 'PENDING' && !buyerSigned && !isCancelled && (
+                    <div className="bg-white rounded-2xl border border-red-100 p-5">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold text-zinc-900 text-sm">Want to cancel?</p>
+                                <p className="text-xs text-zinc-400 mt-0.5">Only possible before signing the agreement.</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (window.confirm('Are you sure you want to cancel this order?')) {
+                                        cancelMutation.mutate()
+                                    }
+                                }}
+                                disabled={cancelMutation.isPending}
+                                className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50 flex items-center gap-2 flex-shrink-0"
+                            >
+                                <XCircle className="h-4 w-4" />
+                                {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Sign Agreement */}
                 {isBuyer && !buyerSigned && !isCancelled && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <div className="flex items-center gap-3 mb-4">
@@ -233,7 +258,6 @@ export default function OrderDetailPage() {
                                 <p className="text-xs text-zinc-400">Required before payment</p>
                             </div>
                         </div>
-
                         {order.agreement_text && (
                             <button
                                 onClick={() => setShowAgreement(!showAgreement)}
@@ -242,13 +266,11 @@ export default function OrderDetailPage() {
                                 {showAgreement ? 'Hide agreement' : 'Read agreement'}
                             </button>
                         )}
-
                         {showAgreement && (
                             <pre className="text-xs text-zinc-600 bg-zinc-50 rounded-xl p-4 whitespace-pre-wrap font-mono leading-relaxed mb-4 max-h-44 overflow-y-auto border border-zinc-100">
                                 {order.agreement_text}
                             </pre>
                         )}
-
                         <button
                             onClick={() => signMutation.mutate()}
                             disabled={signMutation.isPending}
@@ -259,7 +281,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* Agreement signed confirmation */}
+                {/* Agreement signed */}
                 {isBuyer && buyerSigned && !isPaid && !awaitingConfirmation && (
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -272,7 +294,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* STEP 2 (Buyer): Pay via Mobile Money */}
+                {/* Mobile Money payment */}
                 {isBuyer && buyerSigned && isMobileMoney && order.status === 'PENDING' && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <h2 className="font-bold text-zinc-900 mb-1">Pay via Mobile Money</h2>
@@ -281,7 +303,6 @@ export default function OrderDetailPage() {
                                 {Number(order.product_price).toLocaleString()} RWF
                             </span> to:
                         </p>
-
                         <div className="bg-zinc-900 rounded-xl p-5 mb-5 text-center">
                             <div className="flex items-center justify-center gap-2 mb-1">
                                 <Phone className="h-4 w-4 text-zinc-400" />
@@ -290,7 +311,6 @@ export default function OrderDetailPage() {
                             <p className="text-3xl font-black text-white tracking-widest mt-1">0784 559 922</p>
                             <p className="text-xs text-zinc-500 mt-2">Name: FashaMarket Rwanda</p>
                         </div>
-
                         <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5 flex items-start gap-2">
                             <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-700">
@@ -298,7 +318,6 @@ export default function OrderDetailPage() {
                                 Admin will verify within 24 hours.
                             </p>
                         </div>
-
                         <div className="space-y-3">
                             <div>
                                 <label className="text-xs font-semibold text-zinc-700 block mb-1.5">
@@ -323,7 +342,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* COD Info (Buyer) */}
+                {/* COD Info */}
                 {isBuyer && buyerSigned && isCOD && order.status === 'PENDING' && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <h2 className="font-bold text-zinc-900 mb-2">Cash on Delivery</h2>
@@ -341,7 +360,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* Awaiting payment confirmation (Buyer) */}
+                {/* Awaiting payment confirmation */}
                 {isBuyer && awaitingConfirmation && (
                     <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6">
                         <div className="flex items-start gap-3">
@@ -358,20 +377,20 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* Payment confirmed, waiting for seller to ship (Buyer) */}
+                {/* Payment confirmed waiting for ship */}
                 {isBuyer && isPaid && !isShipped && (
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-center gap-3">
                         <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
                         <div>
                             <p className="text-sm font-bold text-blue-800">Payment Confirmed!</p>
                             <p className="text-xs text-blue-600 mt-0.5">
-                                The seller has been notified and is preparing your item. You'll get an update when it ships.
+                                Seller has been notified and is preparing your item.
                             </p>
                         </div>
                     </div>
                 )}
 
-                {/* Item shipped, waiting for buyer to confirm (Buyer) */}
+                {/* Item shipped */}
                 {isBuyer && isShipped && !isDelivered && (
                     <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5 flex items-center gap-3">
                         <Truck className="h-5 w-5 text-violet-600 flex-shrink-0" />
@@ -382,7 +401,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ✅ BUYER: Confirm Received — only shown when status is SHIPPED */}
+                {/* Confirm Received */}
                 {isBuyer && isShipped && !isDelivered && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <div className="flex items-center gap-3 mb-3">
@@ -391,7 +410,7 @@ export default function OrderDetailPage() {
                             </div>
                             <div>
                                 <h2 className="font-bold text-zinc-900">Confirm Delivery</h2>
-                                <p className="text-xs text-zinc-400">Only you can mark this order as delivered</p>
+                                <p className="text-xs text-zinc-400">Only confirm after physically receiving your item</p>
                             </div>
                         </div>
                         <p className="text-sm text-zinc-500 mb-4">
@@ -408,11 +427,9 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ══════════════════════════════════
-                    SELLER ACTIONS
-                ══════════════════════════════════ */}
+                {/* ── SELLER ACTIONS ── */}
 
-                {/* Seller: waiting for buyer to pay */}
+                {/* Waiting for payment */}
                 {isSeller && !isPaid && !isCancelled && (
                     <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-center gap-3">
                         <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
@@ -427,7 +444,7 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* ✅ SELLER: Mark as Shipped — only shown when status is PAID */}
+                {/* Mark as Shipped */}
                 {isSeller && order.status === 'PAID' && (
                     <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                         <div className="flex items-center gap-3 mb-3">
@@ -436,11 +453,11 @@ export default function OrderDetailPage() {
                             </div>
                             <div>
                                 <h2 className="font-bold text-zinc-900">Mark as Shipped</h2>
-                                <p className="text-xs text-zinc-400">Payment has been confirmed — ship the item</p>
+                                <p className="text-xs text-zinc-400">Payment confirmed — ship the item within 2 business days</p>
                             </div>
                         </div>
                         <p className="text-sm text-zinc-500 mb-4">
-                            Once you've handed the item to a courier or the buyer, tap below to notify them it's on the way.
+                            Once you've handed the item to a courier or delivered it, tap below to notify the buyer.
                         </p>
                         <button
                             onClick={() => markShippedMutation.mutate()}
@@ -453,22 +470,41 @@ export default function OrderDetailPage() {
                     </div>
                 )}
 
-                {/* Seller: item shipped, waiting for buyer to confirm */}
+                {/* Seller shipped waiting */}
                 {isSeller && isShipped && !isDelivered && (
                     <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5 flex items-center gap-3">
                         <Truck className="h-5 w-5 text-violet-600 flex-shrink-0" />
                         <div>
                             <p className="text-sm font-bold text-violet-800">Item Shipped</p>
                             <p className="text-xs text-violet-600 mt-0.5">
-                                Waiting for buyer to confirm they received it.
+                                Waiting for buyer to confirm receipt.
                             </p>
                         </div>
                     </div>
                 )}
 
-                {/* ══════════════════════════════════
-                    SHARED: Delivered state
-                ══════════════════════════════════ */}
+                {/* Commission breakdown for seller */}
+                {isSeller && isDelivered && order.commission_amount && (
+                    <div className="bg-white rounded-2xl border border-zinc-100 p-5">
+                        <h3 className="font-bold text-zinc-900 mb-3 text-sm">Payment Breakdown</h3>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-zinc-500">Sale price</span>
+                                <span className="font-semibold text-zinc-900">{Number(order.product_price).toLocaleString()} RWF</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-zinc-500">FashaMarket commission (10%)</span>
+                                <span className="font-semibold text-red-500">- {Number(order.commission_amount).toLocaleString()} RWF</span>
+                            </div>
+                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-100">
+                                <span className="font-bold text-zinc-900">You receive</span>
+                                <span className="font-black text-green-600">{Number(order.seller_amount).toLocaleString()} RWF</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── DELIVERED ── */}
                 {isDelivered && (
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-6 text-center">
                         <Package className="h-12 w-12 text-green-500 mx-auto mb-3" />
@@ -476,7 +512,7 @@ export default function OrderDetailPage() {
                         <p className="text-sm text-green-700 mt-1">
                             {isBuyer
                                 ? 'You confirmed delivery. Thank you for shopping on FashaMarket!'
-                                : 'The buyer confirmed delivery. Your payment will be processed shortly.'}
+                                : 'Buyer confirmed delivery. Your payment will be processed shortly.'}
                         </p>
                         {isBuyer && (
                             <Link to="/products"
