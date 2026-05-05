@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
     ShieldCheck, Truck, BadgeCheck, ArrowRight,
     Star, Users, Package, TrendingUp, ChevronDown
@@ -7,6 +8,8 @@ import {
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import SEO from '@/components/SEO'
+import ProductCard from '@/components/ProductCard'
+import { productsApi } from '@/api/products'
 
 function useInView(threshold = 0.15) {
     const ref = useRef<HTMLDivElement>(null)
@@ -20,23 +23,6 @@ function useInView(threshold = 0.15) {
         return () => obs.disconnect()
     }, [threshold])
     return { ref, inView }
-}
-
-function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
-    const [count, setCount] = useState(0)
-    const { ref, inView } = useInView()
-    useEffect(() => {
-        if (!inView) return
-        let start = 0
-        const step = target / 60
-        const timer = setInterval(() => {
-            start += step
-            if (start >= target) { setCount(target); clearInterval(timer) }
-            else setCount(Math.floor(start))
-        }, 16)
-        return () => clearInterval(timer)
-    }, [inView, target])
-    return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
 }
 
 function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -111,6 +97,13 @@ export default function HomePage() {
         const t = setTimeout(() => setHeroVisible(true), 100)
         return () => clearTimeout(t)
     }, [])
+
+    const { data: featuredData } = useQuery({
+        queryKey: ['featured-products'],
+        queryFn: () => productsApi.getAll({ page: 1, limit: 8 }),
+    })
+
+    const featuredProducts = featuredData?.data ?? []
 
     return (
         <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
@@ -203,8 +196,48 @@ export default function HomePage() {
                 </div>
             </section>
 
+            {/* ── FEATURED PRODUCTS ── */}
+            {featuredProducts.length > 0 && (
+                <section className="py-24 bg-zinc-50">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <FadeUp>
+                            <div className="flex items-end justify-between mb-12">
+                                <div>
+                                    <p className="text-brand-600 font-semibold text-sm uppercase tracking-widest mb-3">Fresh Listings</p>
+                                    <h2 className="text-4xl font-bold text-zinc-900">Latest Products</h2>
+                                    <p className="text-zinc-500 mt-2">Verified and ready to buy right now.</p>
+                                </div>
+                                <Link to="/products"
+                                    className="hidden sm:flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 transition-colors font-medium group">
+                                    View all
+                                    <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                                </Link>
+                            </div>
+                        </FadeUp>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {featuredProducts.map((product, i) => (
+                                <FadeUp key={product.id} delay={i * 60}>
+                                    <ProductCard product={product} />
+                                </FadeUp>
+                            ))}
+                        </div>
+
+                        <FadeUp>
+                            <div className="text-center mt-10">
+                                <Link to="/products"
+                                    className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-all text-sm">
+                                    Browse All Products
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </div>
+                        </FadeUp>
+                    </div>
+                </section>
+            )}
+
             {/* ── FEATURES ── */}
-            <section className="py-24 bg-zinc-50">
+            <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
                         <div className="max-w-xl mb-14">
@@ -219,7 +252,7 @@ export default function HomePage() {
                     <div className="grid sm:grid-cols-3 gap-6">
                         {FEATURES.map((f, i) => (
                             <FadeUp key={f.title} delay={i * 120}>
-                                <div className="group bg-white p-8 rounded-2xl border border-zinc-100 hover:border-zinc-200 hover:shadow-lg transition-all duration-300">
+                                <div className="group bg-zinc-50 p-8 rounded-2xl border border-zinc-100 hover:border-zinc-200 hover:shadow-lg transition-all duration-300">
                                     <div className={`w-12 h-12 ${f.bg} rounded-xl flex items-center justify-center mb-6`}>
                                         {f.icon}
                                     </div>
@@ -233,7 +266,7 @@ export default function HomePage() {
             </section>
 
             {/* ── CATEGORIES ── */}
-            <section className="py-24 bg-white">
+            <section className="py-24 bg-zinc-50">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
                         <div className="flex items-end justify-between mb-12">
@@ -253,13 +286,13 @@ export default function HomePage() {
                         {CATEGORIES.map((cat, i) => (
                             <FadeUp key={cat.name} delay={i * 80}>
                                 <Link to="/products"
-                                    className="group bg-zinc-50 hover:bg-zinc-900 rounded-2xl p-6 text-center border border-zinc-100 hover:border-zinc-900 transition-all duration-300 block">
+                                    className="group bg-white hover:bg-zinc-900 rounded-2xl p-6 text-center border border-zinc-100 hover:border-zinc-900 transition-all duration-300 block">
                                     <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300 inline-block">
                                         {cat.emoji}
                                     </div>
                                     <h3 className="font-bold text-zinc-900 group-hover:text-white transition-colors">{cat.name}</h3>
                                     <p className="text-xs text-zinc-400 group-hover:text-zinc-400 mt-1">{cat.desc}</p>
-                                    <span className="inline-block mt-3 text-xs bg-white group-hover:bg-zinc-800 text-zinc-500 group-hover:text-zinc-300 font-medium px-3 py-1 rounded-full transition-colors">
+                                    <span className="inline-block mt-3 text-xs bg-zinc-50 group-hover:bg-zinc-800 text-zinc-500 group-hover:text-zinc-300 font-medium px-3 py-1 rounded-full transition-colors">
                                         {cat.count}
                                     </span>
                                 </Link>
@@ -270,7 +303,7 @@ export default function HomePage() {
             </section>
 
             {/* ── HOW IT WORKS ── */}
-            <section className="py-24 bg-zinc-50">
+            <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
                         <div className="text-center mb-16">
@@ -288,7 +321,7 @@ export default function HomePage() {
                             { step: '04', title: 'Receive', desc: 'Get your item delivered within the agreed timeline.', emoji: '📦' },
                         ].map((item, i) => (
                             <FadeUp key={item.step} delay={i * 120}>
-                                <div className="bg-white p-6 rounded-2xl border border-zinc-100">
+                                <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
                                     <div className="text-3xl mb-4">{item.emoji}</div>
                                     <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest mb-1">{item.step}</p>
                                     <h3 className="font-bold text-zinc-900 text-lg mb-2">{item.title}</h3>
@@ -301,7 +334,7 @@ export default function HomePage() {
             </section>
 
             {/* ── TESTIMONIALS ── */}
-            <section className="py-24 bg-white">
+            <section className="py-24 bg-zinc-50">
                 <div className="max-w-7xl mx-auto px-4">
                     <FadeUp>
                         <div className="text-center mb-14">
@@ -313,7 +346,7 @@ export default function HomePage() {
                     <div className="grid sm:grid-cols-3 gap-6">
                         {TESTIMONIALS.map((t, i) => (
                             <FadeUp key={t.name} delay={i * 120}>
-                                <div className="bg-zinc-50 rounded-2xl p-7 border border-zinc-100 h-full flex flex-col">
+                                <div className="bg-white rounded-2xl p-7 border border-zinc-100 h-full flex flex-col">
                                     <div className="flex gap-1 mb-5">
                                         {[...Array(t.rating)].map((_, i) => (
                                             <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
